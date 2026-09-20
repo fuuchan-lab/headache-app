@@ -987,6 +987,10 @@ textarea.sticky::placeholder {
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.4;
+  /* 「…ありま／す。」のように、最後の1文字だけ次の行に残らないよう、行を均等に折り返す */
+  text-wrap: balance;
+  /* 日本語は、語の途中ではなく文節の区切りで折り返す（対応していないブラウザでは無視される） */
+  word-break: auto-phrase;
 }
 
 .pressure-advice .secondary {
