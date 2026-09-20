@@ -4,6 +4,8 @@
  * 再訪問時は有効なトークンを再利用、期限切れなら無言で再取得を試みる。
  */
 
+import { createTokenWaiter } from './tokenWaiter.ts'
+
 export const driveConfig = {
   folderName: '頭痛と気圧の記録',
   // 公開されるクライアントID（秘密ではない）。CapLog と同じ OAuth クライアントを使う。
@@ -86,30 +88,37 @@ function waitForGis(timeoutMs = 5000): Promise<void> {
   })
 }
 
+/** ポップアップが閉じた通知のあと、トークンが届くのを待つ時間 */
+const LOGIN_GRACE_MS = 8000
+/** ログイン画面を開いたまま放置された時に、待ち続けない時間 */
+const LOGIN_TIMEOUT_MS = 3 * 60_000
+
 /**
  * アクセストークンを取得する。
  * 初回（トークンなし）は consent、以降は無言の再取得 ('')。アカウント切替は select_account。
  */
 export async function getAccessToken(interactive = true, promptOverride: string | null = null): Promise<string> {
   await waitForGis()
-  return new Promise((resolve, reject) => {
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: driveConfig.clientId,
-      scope: driveConfig.scope,
-      callback: (res) => {
-        if (res.error) {
-          reject(new Error(res.error))
-          return
-        }
-        accessToken = res.access_token
-        storeToken(res.access_token, res.expires_in)
-        resolve(res.access_token)
-      },
-      // ログイン画面を閉じた場合など。これがないと処理が終わらず「接続中」のままになる
-      error_callback: (err) => reject(new Error(err.type)),
-    })
-    client.requestAccessToken({ prompt: promptOverride ?? (interactive && !accessToken ? 'consent' : '') })
+  // ポップアップが閉じた通知は、ログインが成功していても、スマホなどでトークンより先に届くことがある。
+  // すぐ失敗にせず、猶予の間にトークンが届けば成功にする（詳しくは tokenWaiter.ts）
+  const waiter = createTokenWaiter<string>({ graceMs: LOGIN_GRACE_MS, timeoutMs: LOGIN_TIMEOUT_MS })
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: driveConfig.clientId,
+    scope: driveConfig.scope,
+    callback: (res) => {
+      if (res.error) {
+        waiter.fail(res.error)
+        return
+      }
+      accessToken = res.access_token
+      storeToken(res.access_token, res.expires_in)
+      waiter.resolve(res.access_token)
+    },
+    // ログイン画面を閉じた・開けなかった場合など。これがないと処理が終わらず「接続中」のままになる
+    error_callback: (err) => waiter.fail(err.type),
   })
+  client.requestAccessToken({ prompt: promptOverride ?? (interactive && !accessToken ? 'consent' : '') })
+  return waiter.promise
 }
 
 export async function driveFetch(url: string, init: RequestInit = {}, allowRetry = true): Promise<Response> {

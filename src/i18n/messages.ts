@@ -28,7 +28,9 @@ export const ja = {
   'offline.banner': 'オフラインです。記録はこの端末に保存され、ネットにつながると自動で同期します。気圧・場所が取れない時は、その情報なしで保存します。',
   'err.offline': '電波が届かないため、気圧を取得できません。ネットにつながると自動で取得します。',
   'notice.noClientId': 'Google のクライアントIDが設定されていません。',
-  'notice.loginFailed': 'Googleへのログインに失敗しました。もう一度お試しください。',
+  'notice.loginFailed': 'Googleへのログインに失敗しました。もう一度お試しください。他のアプリの中で開いている場合は、Safari（iPhone）やChrome（Android）でこのページを直接開いてください。',
+  'notice.loginIncomplete': 'ログインが完了しませんでした。もう一度お試しください。他のアプリの中で開いている場合は、Safari（iPhone）やChrome（Android）でこのページを直接開いてください。',
+  'notice.dismissHint': 'タップすると閉じます',
   'notice.loggedIn': 'Googleアカウントでログインしました。データは Google ドライブの「{folder}」フォルダーに保存されます。',
   'notice.switched': 'アカウントを切り替えました。',
 
@@ -236,7 +238,9 @@ export const en: Record<MessageKey, string> = {
   'offline.banner': "You're offline. Records are saved on this device and will sync automatically once you're connected. If the pressure or location isn't available, the record is saved without it.",
   'err.offline': "No connection, so the pressure can't be fetched. It will be fetched automatically once you're connected.",
   'notice.noClientId': 'The Google client ID is not configured.',
-  'notice.loginFailed': 'Failed to log in with Google. Please try again.',
+  'notice.loginFailed': 'Failed to log in with Google. Please try again. If you opened this page inside another app, open it directly in Safari (iPhone) or Chrome (Android).',
+  'notice.loginIncomplete': "Login didn't complete. Please try again. If you opened this page inside another app, open it directly in Safari (iPhone) or Chrome (Android).",
+  'notice.dismissHint': 'Tap to dismiss',
   'notice.loggedIn': 'Logged in with Google. Your data will be saved to the "{folder}" folder in Google Drive.',
   'notice.switched': 'Account switched.',
 

@@ -65,7 +65,8 @@ export function useGoogleAuth() {
 
   const say = useCallback((n: Notice) => {
     setNotice(n)
-    setTimeout(() => setNotice((cur) => (cur === n ? null : cur)), 8000)
+    // 成功のお知らせだけ自動で消す。失敗は、ログイン画面から戻ってきた時にも読めるよう、閉じるまで残す
+    if (n.kind === 'ok') setTimeout(() => setNotice((cur) => (cur === n ? null : cur)), 8000)
   }, [])
 
   /** ログインしてドライブのフォルダーを確保する。成功したら true */
@@ -102,10 +103,11 @@ export function useGoogleAuth() {
         setAccount(null)
         setSession(false)
         clearToken()
-        const cancelled = e instanceof Error && e.message === 'popup_closed'
-        if (!restoring && !cancelled) {
+        if (!restoring) {
           console.error('[login]', e)
-          say({ kind: 'error', key: 'notice.loginFailed', detail: describeError(e) })
+          // ログイン画面を閉じた・完了しなかった場合は、専用の文言にする（原因の詳細も付ける）
+          const incomplete = e instanceof Error && (e.message === 'popup_closed' || e.message === 'login_timeout')
+          say({ kind: 'error', key: incomplete ? 'notice.loginIncomplete' : 'notice.loginFailed', detail: describeError(e) })
         }
         return false
       } finally {

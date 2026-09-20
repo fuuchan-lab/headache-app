@@ -74,6 +74,12 @@ export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Pr
               </span>
             </>
           )}
+          {auth.notice.kind === 'error' && (
+            <>
+              <br />
+              <span className="small muted">{t('notice.dismissHint')}</span>
+            </>
+          )}
         </p>
       )}
 

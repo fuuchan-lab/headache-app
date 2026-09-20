@@ -1128,3 +1128,50 @@ textarea.sticky::placeholder {
     animation: none;
   }
 }
+
+/* スマホ（幅430px以下）でも、気圧の右に天気・気温・湿度のボックスを並べる。収まるよう、文字とボックスを小さめにする */
+@media (max-width: 430px) {
+  .now {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .big-pressure {
+    min-width: 0;
+    font-size: clamp(2.1rem, 9.5vw, 3.4rem);
+  }
+
+  .big-pressure .unit {
+    font-size: 0.85rem;
+  }
+
+  .weather {
+    flex: none;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .weather-icon {
+    font-size: 2rem;
+  }
+
+  /* 「くもり時々晴れ」のような長い天気名は、2行に折り返して幅を取らない */
+  .weather-label {
+    max-width: 5.5em;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .weather-meta {
+    font-size: 0.8rem;
+  }
+}
+
+/* 幅がとても狭い画面だけは、気圧の下に回り込ませる */
+@media (max-width: 339px) {
+  .now {
+    flex-wrap: wrap;
+  }
+}
