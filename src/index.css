@@ -536,15 +536,17 @@ select {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4285f4, #34a853 40%, #fbbc05 70%, #ea4335) center / cover;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  background: center / cover;
 }
 
-.google-mark-inner {
-  color: white;
-  font-weight: 800;
-  font-size: 12px;
-  line-height: 1;
+/* 公式ロゴは、暗い配色でも見えるように白い丸の上に置く */
+.google-logo {
+  width: 100%;
+  height: 100%;
+  padding: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
 
 /* アカウントのダイアログ */
@@ -1174,4 +1176,53 @@ textarea.sticky::placeholder {
   .now {
     flex-wrap: wrap;
   }
+}
+
+/* 位置情報が取れない時の警告（設定方法の案内と再試行のボタン付き） */
+.location-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.location-warning-text {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.location-warning .row {
+  justify-content: stretch;
+  flex-wrap: wrap;
+}
+
+.location-warning .row button {
+  flex: 1 1 8em;
+  min-height: 44px;
+}
+
+.location-warning .muted {
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* 位置情報を許可する手順 */
+.loc-platform {
+  margin: 4px 0 0;
+  font-size: 1rem;
+}
+
+.loc-steps {
+  margin: 0;
+  padding-left: 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }

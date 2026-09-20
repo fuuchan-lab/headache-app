@@ -7,7 +7,10 @@
 import { createTokenWaiter } from './tokenWaiter.ts'
 
 export const driveConfig = {
-  folderName: '頭痛と気圧の記録',
+  // 保存先のフォルダー名。言語に関わらず同じ（英語のユーザーに日本語のフォルダーが作られないように）
+  folderName: 'Headache_Log',
+  // 以前のバージョンで作られたフォルダー名。見つかったら、中のデータごと folderName に名前を変えて引き継ぐ
+  legacyFolderNames: ['頭痛と気圧の記録'],
   // 公開されるクライアントID（秘密ではない）。CapLog と同じ OAuth クライアントを使う。
   // 別のクライアントを使う場合は .env.local の VITE_GOOGLE_CLIENT_ID で上書きする。
   clientId:
@@ -134,15 +137,40 @@ export async function driveFetch(url: string, init: RequestInit = {}, allowRetry
   return res
 }
 
-/** アプリ用フォルダーを探し、なければ作って ID を返す */
-export async function ensureFolder(): Promise<string> {
-  if (folderIdCache) return folderIdCache
-  const q = encodeURIComponent(
-    `name='${driveConfig.folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-  )
+/** 指定の名前のフォルダーを探して ID を返す（なければ null） */
+async function findFolder(name: string): Promise<string | null> {
+  const escaped = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+  const q = encodeURIComponent(`name='${escaped}' and mimeType='application/vnd.google-apps.folder' and trashed=false`)
   const list = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`)
   const { files } = (await list.json()) as { files?: { id: string }[] }
-  if (files && files.length > 0) return (folderIdCache = files[0].id)
+  return files && files.length > 0 ? files[0].id : null
+}
+
+/**
+ * アプリ用フォルダー(Headache_Log)の ID を返す。なければ作る。
+ * 以前のバージョンで作られたフォルダー（日本語名）が残っていれば、中のファイルごと名前を変えて引き継ぐ。
+ */
+export async function ensureFolder(): Promise<string> {
+  if (folderIdCache) return folderIdCache
+
+  const current = await findFolder(driveConfig.folderName)
+  if (current) return (folderIdCache = current)
+
+  for (const legacyName of driveConfig.legacyFolderNames) {
+    const legacy = await findFolder(legacyName)
+    if (!legacy) continue
+    try {
+      await driveFetch(`https://www.googleapis.com/drive/v3/files/${legacy}?fields=id`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: driveConfig.folderName }),
+      })
+    } catch (e) {
+      // 名前を変えられなくても、旧フォルダーのまま使い続ける（同期は止めない）
+      console.error('[folder-rename]', e)
+    }
+    return (folderIdCache = legacy)
+  }
 
   const created = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
     method: 'POST',

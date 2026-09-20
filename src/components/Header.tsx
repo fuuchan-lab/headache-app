@@ -4,6 +4,7 @@ import type { SyncState } from '../hooks/useSync.ts'
 import { LOCALES, type TFn } from '../i18n/context.ts'
 import { useI18n } from '../i18n/useI18n.ts'
 import { GearIcon } from './GearIcon.tsx'
+import { GoogleLogo } from './GoogleLogo.tsx'
 import { driveConfig } from '../drive.ts'
 
 interface Props {
@@ -52,7 +53,7 @@ export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Pr
               aria-hidden="true"
               style={account?.avatarUrl ? { backgroundImage: `url(${account.avatarUrl})` } : undefined}
             >
-              {!account?.avatarUrl && <span className="google-mark-inner">G</span>}
+              {!account?.avatarUrl && <GoogleLogo />}
             </span>
             <span className="google-text">{label}</span>
           </button>

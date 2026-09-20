@@ -9,6 +9,7 @@ import { describeWeather } from '../weather.ts'
 import type { Medicine } from '../settings.ts'
 import type { AppRecord } from '../types.ts'
 import { AdvicePopup } from './AdvicePopup.tsx'
+import { LocationHelpPopup } from './LocationHelpPopup.tsx'
 import { MedStatus } from './MedStatus.tsx'
 import { PressureSparkline } from './PressureSparkline.tsx'
 
@@ -32,6 +33,7 @@ function errorMessageKey(error: NonNullable<PressureState['error']>) {
 export function PressureCard({ pressure, records, medicines }: Props) {
   const { t, lang } = useI18n()
   const [adviceOpen, setAdviceOpen] = useState(false)
+  const [locationHelpOpen, setLocationHelpOpen] = useState(false)
   const online = useOnline()
   const { status, forecast, error, staleLocation, fetchedAt, refresh, position } = pressure
   // 気圧を取得している位置の市区町村名（取得できなければ付けない）
@@ -106,7 +108,26 @@ export function PressureCard({ pressure, records, medicines }: Props) {
       {staleLocation && <p className="muted">{t('pressure.staleLocation')}</p>}
       {/* 電波がなくて気圧を取れない時は、原因が分かるように、専用のメッセージにする */}
       {error && error.kind === 'pressure' && !online && <p className="error">{t('err.offline')}</p>}
-      {error && !(error.kind === 'pressure' && !online) && (
+      {/* 位置情報が取れない時は、警告として目立たせ、設定方法の案内と再試行を付ける */}
+      {error && error.kind === 'location' && (
+        <div className="location-warning" role="alert">
+          <p className="location-warning-text">⚠ {t(errorMessageKey(error))}</p>
+          <div className="row">
+            <button className="secondary" onClick={() => setLocationHelpOpen(true)}>
+              {t('loc.viewSteps')}
+            </button>
+            <button className="primary" onClick={refresh}>
+              {t('loc.retry')}
+            </button>
+          </div>
+          <p className="muted small">
+            {t('err.detail')}: {error.detail}
+          </p>
+        </div>
+      )}
+      {locationHelpOpen && <LocationHelpPopup onClose={() => setLocationHelpOpen(false)} onRetry={refresh} />}
+      {/* 気圧データの取得に失敗した時（通信できる場合）は、従来どおり、文言と詳細を出す */}
+      {error && error.kind === 'pressure' && online && (
         <>
           <p className="error">{t(errorMessageKey(error))}</p>
           <p className="muted small">
