@@ -35,6 +35,8 @@ import {
   photoFileName,
   serializeMonth,
 } from './syncMerge.ts'
+import { isMedicinesDirty, loadMedicines, saveMedicines, setMedicinesDirty } from './settings.ts'
+import { parseSettings, planSettingsSync, serializeSettings } from './settingsMerge.ts'
 import type { AppRecord } from './types.ts'
 
 export interface SyncResult {
@@ -44,6 +46,8 @@ export interface SyncResult {
 }
 
 const INDEX_KEY = 'headache-drive-index'
+/** 薬の設定を置くファイル名 */
+const SETTINGS_FILE = 'settings.json'
 
 /** ドライブのファイルID → 前回取り込んだ時の更新時刻 */
 function loadIndex(): Record<string, string> {
@@ -76,6 +80,38 @@ async function doSync(): Promise<SyncResult> {
   const index = loadIndex()
   let changedLocal = false
   let uploaded = 0
+
+  // 0. 薬の設定（settings.json）。薬ごとに更新時刻の新しい方を採用して合わせる
+  const settingsFile = files.find((f) => f.name === SETTINGS_FILE)
+  const wasDirty = isMedicinesDirty()
+  setMedicinesDirty(false) // 同期している間に、この端末で新しく変更された分を取りこぼさないよう、先に外しておく
+  try {
+    let remoteMedicines = null
+    if (settingsFile && index[settingsFile.id] !== settingsFile.modifiedTime) {
+      remoteMedicines = parseSettings(await downloadText(settingsFile.id))
+    }
+    const plan = planSettingsSync(loadMedicines(), remoteMedicines, settingsFile !== undefined, wasDirty)
+    if (plan.saveLocal) {
+      saveMedicines(plan.merged)
+      changedLocal = true
+    }
+    if (plan.upload) {
+      const up = await uploadFile({
+        id: settingsFile?.id,
+        name: SETTINGS_FILE,
+        mimeType: 'application/json',
+        blob: new Blob([serializeSettings(plan.merged)], { type: 'application/json' }),
+        parentId: folderId,
+      })
+      index[up.id] = up.modifiedTime
+    } else if (settingsFile && remoteMedicines) {
+      index[settingsFile.id] = settingsFile.modifiedTime
+    }
+    saveIndex(index)
+  } catch (e) {
+    if (wasDirty) setMedicinesDirty(true) // 送れなかった変更は、次の同期でもう一度送る
+    throw e
+  }
 
   const photoFiles = new Map(files.filter((f) => f.name.startsWith('photo-')).map((f) => [f.name, f.id]))
 

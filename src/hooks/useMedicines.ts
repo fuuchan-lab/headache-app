@@ -1,45 +1,59 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   addMedicine,
+  isMedicinesDirty,
   loadMedicines,
+  removeMedicine,
   saveMedicines,
+  setMedicinesDirty,
   updateMedicine,
+  visibleMedicines,
   type Medicine,
   type UpdateResult,
 } from '../settings.ts'
 
 export function useMedicines() {
-  const [medicines, setMedicines] = useState<Medicine[]>(loadMedicines)
+  /** 削除済みを含む全部。同期の対象 */
+  const [all, setAll] = useState<Medicine[]>(loadMedicines)
+  /** ドライブにまだ反映していない変更があるか */
+  const [dirty, setDirty] = useState(isMedicinesDirty)
+  const medicines = useMemo(() => visibleMedicines(all), [all])
 
+  /** この端末での変更を保存する。ドライブへの反映が必要な印も付ける */
   const persist = useCallback((next: Medicine[]) => {
-    setMedicines(next)
+    setAll(next)
     saveMedicines(next)
+    setMedicinesDirty(true)
+    setDirty(true)
+  }, [])
+
+  /** 同期で保存内容が変わった後に、画面の表示を保存内容に合わせ直す */
+  const refresh = useCallback(() => {
+    setAll(loadMedicines())
+    setDirty(isMedicinesDirty())
   }, [])
 
   /** 追加できたら true。空欄・重複は false */
   const add = useCallback(
     (rawName: string): boolean => {
-      const result = addMedicine(medicines, rawName, crypto.randomUUID())
+      const result = addMedicine(all, rawName, crypto.randomUUID())
       if (result.ok) persist(result.medicines)
       return result.ok
     },
-    [medicines, persist],
+    [all, persist],
   )
 
   /** 名前と色を変える。名前を変えた時は、過去の記録の薬名も直せるよう、変更前後の名前を返す */
   const update = useCallback(
     (id: string, name: string, color: string): UpdateResult => {
-      const result = updateMedicine(medicines, id, name, color)
+      const result = updateMedicine(all, id, name, color)
       if (result.ok) persist(result.medicines)
       return result
     },
-    [medicines, persist],
+    [all, persist],
   )
 
-  const remove = useCallback(
-    (id: string) => persist(medicines.filter((m) => m.id !== id)),
-    [medicines, persist],
-  )
+  const remove = useCallback((id: string) => persist(removeMedicine(all, id)), [all, persist])
 
-  return { medicines, add, update, remove }
+  return { medicines, dirty, refresh, add, update, remove }
 }

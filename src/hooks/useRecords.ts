@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getAllRecords, putPhoto, putRecord, softDeleteRecord } from '../db.ts'
+import { shouldLogPressure } from '../pressureLog.ts'
 import type { AppRecord, HeadacheLevel, MedicationRecord } from '../types.ts'
 
 export interface Snapshot {
@@ -7,8 +8,6 @@ export interface Snapshot {
   lat: number | null
   lon: number | null
 }
-
-const PRESSURE_LOG_INTERVAL = 5 * 60_000
 
 /** 新しく作る記録に共通の項目。ts は記録の日時、createdAt は実際に作った時刻 */
 function stamps(ts: number) {
@@ -64,11 +63,12 @@ export function useRecords() {
     [reload],
   )
 
-  /** アプリを開いた時の気圧を記録する。短時間の連続記録は間引く */
+  /** アプリを開いた時（画面に戻った時）の、その場所の気圧を記録する。二重記録だけ防ぐ */
   const logPressure = useCallback(
     async (snap: Snapshot) => {
-      const last = (await getAllRecords()).find((r) => !r.deleted && r.pressure !== null)
-      if (last && Date.now() - last.ts < PRESSURE_LOG_INTERVAL) return
+      // 頭痛・服薬の記録に付いた気圧ではなく、開いた時の自動記録だけを見て、二重記録かどうか判断する
+      const last = (await getAllRecords()).find((r) => !r.deleted && r.type === 'pressure')
+      if (!shouldLogPressure(last?.ts ?? null, Date.now())) return
       await putRecord({ ...stamps(Date.now()), type: 'pressure', ...snap })
       await reload()
     },

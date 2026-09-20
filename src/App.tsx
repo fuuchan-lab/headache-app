@@ -4,7 +4,6 @@ import { HeadacheForm } from './components/HeadacheForm.tsx'
 import type { EditResult } from './components/MedicineEditor.tsx'
 import { HistoryList } from './components/HistoryList.tsx'
 import { MedicationForm } from './components/MedicationForm.tsx'
-import { MedStatus } from './components/MedStatus.tsx'
 import { PressureCard } from './components/PressureCard.tsx'
 import { PressureChart } from './components/PressureChart.tsx'
 import { SettingsPage } from './components/SettingsPage.tsx'
@@ -19,8 +18,15 @@ export default function App() {
   const { records, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, renameMedication, remove } =
     useRecords()
   const auth = useGoogleAuth()
-  const sync = useSync(auth.account !== null, unsyncedCount, reload)
-  const { medicines, add: addMedicine, update: updateMedicineSetting, remove: removeMedicine } = useMedicines()
+  const {
+    medicines,
+    dirty: medicinesDirty,
+    refresh: refreshMedicines,
+    add: addMedicine,
+    update: updateMedicineSetting,
+    remove: removeMedicine,
+  } = useMedicines()
+  const sync = useSync(auth.account !== null, unsyncedCount, medicinesDirty, reload, refreshMedicines)
 
   const pressure = usePressure((forecast, pos) => {
     void logPressure({ pressure: forecast.current, lat: pos.lat, lon: pos.lon })
@@ -61,8 +67,7 @@ export default function App() {
         />
       ) : (
         <>
-          <PressureCard pressure={pressure} />
-          <MedStatus records={records} />
+          <PressureCard pressure={pressure} records={records} />
           <HeadacheForm
             pressure={pressure.forecast?.current ?? null}
             onSave={(level, note, ts) => addHeadache(level, note, ts, snapshot())}

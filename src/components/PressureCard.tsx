@@ -5,14 +5,18 @@ import { discomfortCategory, discomfortColor, discomfortIndex } from '../discomf
 import { useI18n } from '../i18n/useI18n.ts'
 import { assessTrend } from '../warning.ts'
 import { describeWeather } from '../weather.ts'
+import type { AppRecord } from '../types.ts'
 import { AdvicePopup } from './AdvicePopup.tsx'
+import { MedStatus } from './MedStatus.tsx'
 import { PressureSparkline } from './PressureSparkline.tsx'
 
 interface Props {
   pressure: PressureState & { refresh: () => void }
+  /** 「最後に薬を飲んでから」の表示に使う */
+  records: AppRecord[]
 }
 
-export function PressureCard({ pressure }: Props) {
+export function PressureCard({ pressure, records }: Props) {
   const { t, lang } = useI18n()
   const [adviceOpen, setAdviceOpen] = useState(false)
   const { status, forecast, error, staleLocation, fetchedAt, refresh, position } = pressure
@@ -64,23 +68,26 @@ export function PressureCard({ pressure }: Props) {
         status === 'loading' && <p className="muted">{t('pressure.fetching')}</p>
       )}
 
-      {trend && (
-        <p
-          className={`banner banner-${trend.level}`}
-          role={trend.level === 'warning' || trend.level === 'caution' ? 'alert' : undefined}
-        >
-          {trend.level === 'warning' && '⚠️ '}
-          {trend.level === 'caution' && '⚠ '}
-          {trend.level === 'info' && '📈 '}
-          {trend.message}
-        </p>
-      )}
-      {/* 気圧の下降・上昇に応じたアドバイス。予報が取れている時だけ出す */}
-      {trend && (
-        <button className="secondary" onClick={() => setAdviceOpen(true)}>
-          💡 {t('advice.button')}
-        </button>
-      )}
+      {/* 下段: 左に「最後に薬を飲んでから」、右に気圧の変化のお知らせと「アドバイス」ボタン */}
+      <div className={`pressure-bottom${trend ? '' : ' pressure-bottom-single'}`}>
+        <MedStatus records={records} />
+        {trend && (
+          <div className="pressure-advice">
+            <p
+              className={`banner banner-${trend.level}`}
+              role={trend.level === 'warning' || trend.level === 'caution' ? 'alert' : undefined}
+            >
+              {trend.level === 'warning' && '⚠️ '}
+              {trend.level === 'caution' && '⚠ '}
+              {trend.level === 'info' && '📈 '}
+              {trend.message}
+            </p>
+            <button className="secondary" onClick={() => setAdviceOpen(true)}>
+              💡 {t('advice.button')}
+            </button>
+          </div>
+        )}
+      </div>
       {adviceOpen && trend && <AdvicePopup direction={trend.direction} onClose={() => setAdviceOpen(false)} />}
       {staleLocation && <p className="muted">{t('pressure.staleLocation')}</p>}
       {error && (

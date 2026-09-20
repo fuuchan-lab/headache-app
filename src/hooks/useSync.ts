@@ -12,7 +12,15 @@ const FOCUS_SYNC_INTERVAL = 60_000
  * - 「今すぐ同期」を押した時
  * 失敗した場合は、上のいずれかの次の機会に再試行する。
  */
-export function useSync(loggedIn: boolean, unsyncedCount: number, reload: () => Promise<void>) {
+export function useSync(
+  loggedIn: boolean,
+  unsyncedCount: number,
+  /** 薬の設定に、ドライブへ反映していない変更があるか */
+  medicinesDirty: boolean,
+  reload: () => Promise<void>,
+  /** 同期が終わるたびに呼ぶ（薬の設定の表示を、保存内容に合わせ直すため） */
+  onSynced: () => void,
+) {
   const [status, setStatus] = useState<SyncStatus>('idle')
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null)
   const lastRunRef = useRef(0)
@@ -23,12 +31,13 @@ export function useSync(loggedIn: boolean, unsyncedCount: number, reload: () => 
     try {
       const result = await syncNow()
       if (result.changedLocal) await reload()
+      onSynced()
       setLastSyncAt(Date.now())
       setStatus('ok')
     } catch {
       setStatus('error')
     }
-  }, [reload])
+  }, [reload, onSynced])
 
   // ログイン直後に同期
   useEffect(() => {
@@ -36,12 +45,13 @@ export function useSync(loggedIn: boolean, unsyncedCount: number, reload: () => 
     if (loggedIn) void run()
   }, [loggedIn, run])
 
-  // 未同期の記録ができたら、少し待ってからまとめて同期
+  // 未同期の記録や薬の設定の変更ができたら、少し待ってからまとめて同期
+  const pending = unsyncedCount + (medicinesDirty ? 1 : 0)
   useEffect(() => {
-    if (!loggedIn || unsyncedCount === 0) return
+    if (!loggedIn || pending === 0) return
     const id = setTimeout(() => void run(), 1500)
     return () => clearTimeout(id)
-  }, [loggedIn, unsyncedCount, run])
+  }, [loggedIn, pending, run])
 
   // 画面に戻った時・オンラインに戻った時
   useEffect(() => {

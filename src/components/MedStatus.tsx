@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/useI18n.ts'
 import { localizeMedicineName } from '../medicineNames.ts'
 import type { AppRecord } from '../types.ts'
 
+/** 最後に薬を飲んでからの経過時間。気圧カードの左下に置く */
 export function MedStatus({ records }: { records: AppRecord[] }) {
   const { t, lang } = useI18n()
   const [now, setNow] = useState(() => Date.now())
@@ -15,18 +16,18 @@ export function MedStatus({ records }: { records: AppRecord[] }) {
   const last = records.find((r) => r.type === 'medication')
 
   return (
-    <section className="card">
-      <h2>{t('last.title')}</h2>
+    <div className="med-status">
+      <h3 className="med-status-title">{t('last.title')}</h3>
       {last && last.type === 'medication' ? (
         <>
-          <p className="big">{formatElapsed(now - last.ts, t)}</p>
+          <p className="med-status-time">{formatElapsed(now - last.ts, t)}</p>
           <p className="muted">
-            {formatDateTime(last.ts, lang)}　{localizeMedicineName(last.name, lang)}
+            {formatDateTime(last.ts, lang)}　<span className="nowrap">{localizeMedicineName(last.name, lang)}</span>
           </p>
         </>
       ) : (
         <p className="muted">{t('last.none')}</p>
       )}
-    </section>
+    </div>
   )
 }
