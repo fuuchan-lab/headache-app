@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { formatDateTime, formatElapsed } from '../format.ts'
+import { useI18n } from '../i18n/useI18n.ts'
 import type { AppRecord } from '../types.ts'
 
 export function MedStatus({ records }: { records: AppRecord[] }) {
+  const { t, lang } = useI18n()
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000)
@@ -13,16 +15,16 @@ export function MedStatus({ records }: { records: AppRecord[] }) {
 
   return (
     <section className="card">
-      <h2>最後に薬を飲んでから</h2>
+      <h2>{t('last.title')}</h2>
       {last && last.type === 'medication' ? (
         <>
-          <p className="big">{formatElapsed(now - last.ts)}</p>
+          <p className="big">{formatElapsed(now - last.ts, t)}</p>
           <p className="muted">
-            {formatDateTime(last.ts)}　{last.name}
+            {formatDateTime(last.ts, lang)}　{last.name}
           </p>
         </>
       ) : (
-        <p className="muted">服薬の記録はまだありません。</p>
+        <p className="muted">{t('last.none')}</p>
       )}
     </section>
   )

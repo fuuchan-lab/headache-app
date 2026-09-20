@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { fromLocalInput, toLocalInput } from '../format.ts'
+import { useI18n } from '../i18n/useI18n.ts'
 import type { Medicine } from '../settings.ts'
 import type { AppRecord, HeadacheRecord, MedicationRecord } from '../types.ts'
 import { LevelSlider } from './LevelSlider.tsx'
@@ -15,6 +16,7 @@ interface Props {
 
 /** 履歴の1件を編集する（日時・頭痛レベル／薬・錠数・メモ）。気圧と写真は記録時のまま */
 export function RecordEditor({ record, medicines, onSave, onCancel }: Props) {
+  const { t } = useI18n()
   const [when, setWhen] = useState(toLocalInput(record.ts))
   const [note, setNote] = useState(record.note)
   const [level, setLevel] = useState(record.type === 'headache' ? record.level : 0)
@@ -37,7 +39,7 @@ export function RecordEditor({ record, medicines, onSave, onCancel }: Props) {
   return (
     <div className="editor">
       <label className="field">
-        日時
+        {t('edit.when')}
         <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
       </label>
       {record.type === 'headache' ? (
@@ -52,15 +54,15 @@ export function RecordEditor({ record, medicines, onSave, onCancel }: Props) {
         />
       )}
       <div className="field">
-        付箋メモ
+        {t('edit.note')}
         <StickyNoteField value={note} onChange={setNote} />
       </div>
       <div className="row">
         <button className="link" onClick={onCancel}>
-          キャンセル
+          {t('edit.cancel')}
         </button>
         <button className="primary" disabled={!valid} onClick={submit}>
-          保存
+          {t('edit.save')}
         </button>
       </div>
     </div>

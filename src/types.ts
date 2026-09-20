@@ -46,15 +46,6 @@ export interface PhotoRecord {
   synced: boolean
 }
 
-export const LEVEL_LABELS: Record<HeadacheLevel, string> = {
-  0: 'なし',
-  1: '軽い',
-  2: 'やや痛い',
-  3: '痛い',
-  4: 'かなり痛い',
-  5: '耐えられない',
-}
-
 export const LEVEL_COLORS: Record<HeadacheLevel, string> = {
   0: '#4ade80',
   1: '#a3e635',

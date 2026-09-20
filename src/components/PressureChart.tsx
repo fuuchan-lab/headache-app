@@ -10,23 +10,30 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { recordTitle } from '../format.ts'
+import { LOCALES } from '../i18n/context.ts'
+import { useI18n } from '../i18n/useI18n.ts'
 import { colorFor, type Medicine } from '../settings.ts'
-import { LEVEL_COLORS, LEVEL_LABELS, type AppRecord, type HeadacheLevel } from '../types.ts'
-import { NotePopup, type NoteMark } from './NotePopup.tsx'
+import { LEVEL_COLORS, type AppRecord, type HeadacheLevel } from '../types.ts'
 import { PillIcon } from './PillIcon.tsx'
+import { RecordPopup } from './RecordPopup.tsx'
 import { StickyIcon } from './StickyIcon.tsx'
 
 const DAY = 86_400_000
-const RANGES = [
-  { label: '1日', days: 1 },
-  { label: '3日', days: 3 },
-  { label: '7日', days: 7 },
-  { label: '30日', days: 30 },
-]
+const RANGES = [1, 3, 7, 30]
 const ICON_SIZE = 20
+/** 錠剤アイコンを重ねる時の横のずらし幅 (px) */
+const PILL_OVERLAP = 8
+/** 横軸の線から、錠剤アイコン・付箋アイコンまでの距離 (px) */
+const PILL_ABOVE_AXIS = ICON_SIZE / 2 + 2
+const NOTE_BELOW_AXIS = ICON_SIZE / 2 + 4
+/** 指で押しやすいよう、見た目より広くする当たり判定の半径 (px) */
+const HIT_RADIUS = 18
 
 interface Point {
   t: number
+  /** 頭痛の記録の点だけが持つ。タップで詳細を開くために使う */
+  id?: string
   pressure?: number
   level?: number
 }
@@ -36,6 +43,16 @@ interface MedMark {
   t: number
   name: string
   color: string
+  /** まるごとの錠剤アイコンの数（2錠なら2つ） */
+  whole: number
+  /** 0.5錠の端数があれば、半分のアイコンを最後に1つ足す */
+  half: boolean
+}
+
+interface NoteMark {
+  id: string
+  t: number
+  title: string
 }
 
 /** 複数日表示の横軸の目盛り。日付が重複しないよう、0時の位置に置く（長い期間は間引く） */
@@ -51,20 +68,38 @@ function dayTicks(from: number, to: number, days: number): number[] {
   return ticks
 }
 
-function tickLabel(t: number, days: number) {
-  const d = new Date(t)
-  return days <= 1 ? `${d.getHours()}時` : `${d.getMonth() + 1}/${d.getDate()}`
+/** 錠数を、まるごとのアイコン数と半分のアイコン有無にする（重ねるのは最大6つ） */
+function pillCounts(tablets: number): { whole: number; half: boolean } {
+  const half = tablets - Math.floor(tablets) >= 0.5
+  const whole = Math.min(Math.floor(tablets), half ? 5 : 6)
+  return { whole: whole === 0 && !half ? 1 : whole, half }
 }
 
-/** 頭痛レベルの点。レベルに応じた色で描く（気圧だけの点では描かない） */
-function LevelDot({ cx, cy, payload }: { cx?: number; cy?: number; payload?: Point }) {
-  if (cx === undefined || cy === undefined || payload?.level === undefined) return null
-  return <circle cx={cx} cy={cy} r={5} fill={LEVEL_COLORS[payload.level as HeadacheLevel]} stroke="#ffffff" strokeWidth={1.5} />
+interface LevelDotProps {
+  cx?: number
+  cy?: number
+  payload?: Point
+  onOpen: (id: string) => void
+  label: (level: HeadacheLevel) => string
+}
+
+/** 頭痛レベルの点。レベルに応じた色で描き、タップで記録の詳細を開く（気圧だけの点では描かない） */
+function LevelDot({ cx, cy, payload, onOpen, label }: LevelDotProps) {
+  if (cx === undefined || cy === undefined || payload?.level === undefined || !payload.id) return null
+  const id = payload.id
+  const level = payload.level as HeadacheLevel
+  return (
+    <g role="button" aria-label={label(level)} style={{ cursor: 'pointer' }} onClick={() => onOpen(id)}>
+      <circle cx={cx} cy={cy} r={HIT_RADIUS} fill="transparent" />
+      <circle cx={cx} cy={cy} r={5} fill={LEVEL_COLORS[level]} stroke="#ffffff" strokeWidth={1.5} />
+    </g>
+  )
 }
 
 export function PressureChart({ records, medicines }: { records: AppRecord[]; medicines: Medicine[] }) {
+  const { t, lang } = useI18n()
   const [days, setDays] = useState(3)
-  const [openNote, setOpenNote] = useState<NoteMark | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
   // 表示範囲は「最新の記録」を基準にして、描画中に現在時刻を読まない
   const latest = records[0]?.ts ?? 0
   const from = latest - days * DAY
@@ -72,29 +107,26 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
   const { points, meds, notes, pressureDomain } = useMemo(() => {
     const inRange = records.filter((r) => r.ts >= from).sort((a, b) => a.ts - b.ts)
     const points: Point[] = inRange.flatMap((r): Point[] => {
-      if (r.type === 'headache') return [{ t: r.ts, level: r.level, pressure: r.pressure ?? undefined }]
+      if (r.type === 'headache') return [{ t: r.ts, id: r.id, level: r.level, pressure: r.pressure ?? undefined }]
       if (r.type === 'pressure' && r.pressure !== null) return [{ t: r.ts, pressure: r.pressure }]
       return []
     })
     const meds: MedMark[] = inRange.flatMap((r): MedMark[] =>
-      r.type === 'medication' ? [{ id: r.id, t: r.ts, name: r.name, color: colorFor(medicines, r.name) }] : [],
+      r.type === 'medication'
+        ? [{ id: r.id, t: r.ts, name: r.name, color: colorFor(medicines, r.name), ...pillCounts(r.tablets ?? 1) }]
+        : [],
     )
     // メモのある記録には付箋マークを付ける
-    const notes: NoteMark[] = inRange.flatMap((r): NoteMark[] => {
-      if (r.type === 'pressure' || !r.note) return []
-      const title =
-        r.type === 'headache'
-          ? `頭痛 ${r.level}（${LEVEL_LABELS[r.level]}）`
-          : `${r.name}${r.tablets !== undefined ? ` ${r.tablets}錠` : ''}`
-      return [{ id: r.id, t: r.ts, title, text: r.note }]
-    })
-    // 錠剤アイコンを置く位置が決まるよう、気圧軸の範囲は自分で計算する
+    const notes: NoteMark[] = inRange.flatMap((r): NoteMark[] =>
+      r.type !== 'pressure' && r.note ? [{ id: r.id, t: r.ts, title: recordTitle(r, t) }] : [],
+    )
+    // アイコンを軸の位置に置くため、気圧軸の範囲は自分で計算する
     const values = points.flatMap((p) => (p.pressure === undefined ? [] : [p.pressure]))
     const pressureDomain: [number, number] = values.length
       ? [Math.floor(Math.min(...values)) - 2, Math.ceil(Math.max(...values)) + 2]
       : [990, 1030]
     return { points, meds, notes, pressureDomain }
-  }, [records, medicines, from])
+  }, [records, medicines, from, t])
 
   const usedMeds = useMemo(() => {
     const seen = new Map<string, string>()
@@ -102,30 +134,40 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
     return [...seen]
   }, [meds])
 
+  const opened = openId ? records.find((r) => r.id === openId) : undefined
+
   if (points.length < 2) {
     return (
       <section className="card">
-        <h2>気圧と頭痛の推移</h2>
-        <p className="muted">記録が増えるとここにグラフが表示されます。</p>
+        <h2>{t('chart.title')}</h2>
+        <p className="muted">{t('chart.empty')}</p>
       </section>
     )
+  }
+
+  const pressureName = t('chart.pressure')
+  // 軸の線の位置（ここを基準に、錠剤は少し上・付箋は少し下へずらして描く）
+  const axisY = pressureDomain[0] + 0.01
+  const titleOf = (id: string) => {
+    const r = records.find((x) => x.id === id)
+    return r && r.type !== 'pressure' ? recordTitle(r, t) : ''
   }
 
   return (
     <section className="card">
       <div className="row">
-        <h2>気圧と頭痛の推移</h2>
+        <h2>{t('chart.title')}</h2>
         <div className="seg">
-          {RANGES.map((r) => (
-            <button key={r.days} className={days === r.days ? 'on' : ''} onClick={() => setDays(r.days)}>
-              {r.label}
+          {RANGES.map((d) => (
+            <button key={d} className={days === d ? 'on' : ''} onClick={() => setDays(d)}>
+              {t('chart.days', { n: d })}
             </button>
           ))}
         </div>
       </div>
       <div className="chart">
-        <ResponsiveContainer width="100%" height={280}>
-          <ComposedChart data={points} margin={{ top: ICON_SIZE, right: 0, bottom: 0, left: -12 }}>
+        <ResponsiveContainer width="100%" height={290}>
+          <ComposedChart data={points} margin={{ top: 8, right: 0, bottom: 0, left: -12 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis
               dataKey="t"
@@ -133,8 +175,14 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
               scale="time"
               domain={[from, latest]}
               ticks={days > 1 ? dayTicks(from, latest, days) : undefined}
-              tickFormatter={(t: number) => tickLabel(t, days)}
+              tickFormatter={(v: number) => {
+                const d = new Date(v)
+                return days <= 1 ? t('chart.hour', { h: d.getHours() }) : `${d.getMonth() + 1}/${d.getDate()}`
+              }}
               tick={{ fontSize: 11 }}
+              // 軸の線と目盛りの文字の間に、付箋アイコンを置く余白をつくる
+              height={50}
+              tickMargin={26}
             />
             <YAxis yAxisId="p" domain={pressureDomain} allowDataOverflow tick={{ fontSize: 11 }} />
             <YAxis
@@ -146,21 +194,28 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
               width={24}
             />
             <Tooltip
-              labelFormatter={(t) => new Date(t as number).toLocaleString('ja-JP')}
-              formatter={(v, name) => (name === '気圧' ? [`${Number(v).toFixed(1)} hPa`, name] : [String(v), name])}
+              labelFormatter={(v) => new Date(v as number).toLocaleString(LOCALES[lang])}
+              formatter={(v, name) => (name === pressureName ? [`${Number(v).toFixed(1)} hPa`, name] : [String(v), name])}
             />
             {meds.map((m) => (
               <ReferenceLine key={m.id} yAxisId="p" x={m.t} stroke={m.color} strokeDasharray="4 3" strokeOpacity={0.7} />
             ))}
-            <Line yAxisId="p" dataKey="pressure" name="気圧" stroke="#0f766e" strokeWidth={2} dot={false} connectNulls />
+            <Line yAxisId="p" dataKey="pressure" name={pressureName} stroke="#0f766e" strokeWidth={2} dot={false} connectNulls />
             <Line
               yAxisId="l"
               dataKey="level"
-              name="頭痛"
+              name={t('chart.headache')}
               stroke="#dc2626"
               strokeWidth={2}
               connectNulls
-              dot={<LevelDot />}
+              dot={
+                <LevelDot
+                  onOpen={setOpenId}
+                  label={(level) =>
+                    t('chart.openRecord', { title: t('history.headache', { level, label: t(`level.${level}`) }) })
+                  }
+                />
+              }
               activeDot={false}
               isAnimationActive={false}
             />
@@ -169,10 +224,39 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
                 key={m.id}
                 yAxisId="p"
                 x={m.t}
-                y={pressureDomain[1]}
-                shape={({ cx, cy }) => (
-                  <PillIcon color={m.color} size={ICON_SIZE} x={(cx ?? 0) - ICON_SIZE / 2} y={(cy ?? 0) - ICON_SIZE / 2} />
-                )}
+                y={axisY}
+                shape={({ cx, cy }) => {
+                  const total = m.whole + (m.half ? 1 : 0)
+                  const centerY = (cy ?? 0) - PILL_ABOVE_AXIS
+                  const hitHalfWidth = Math.max(((total - 1) * PILL_OVERLAP) / 2 + ICON_SIZE / 2, HIT_RADIUS)
+                  return (
+                    <g
+                      role="button"
+                      aria-label={t('chart.openRecord', { title: titleOf(m.id) })}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setOpenId(m.id)}
+                    >
+                      {/* 重ねた錠剤アイコン全体を覆う当たり判定 */}
+                      <rect
+                        x={(cx ?? 0) - hitHalfWidth}
+                        y={centerY - HIT_RADIUS}
+                        width={hitHalfWidth * 2}
+                        height={HIT_RADIUS * 2}
+                        fill="transparent"
+                      />
+                      {Array.from({ length: total }, (_, i) => (
+                        <PillIcon
+                          key={i}
+                          color={m.color}
+                          size={ICON_SIZE}
+                          half={m.half && i === total - 1}
+                          x={(cx ?? 0) - ICON_SIZE / 2 + (i - (total - 1) / 2) * PILL_OVERLAP}
+                          y={centerY - ICON_SIZE / 2}
+                        />
+                      ))}
+                    </g>
+                  )
+                }}
               />
             ))}
             {notes.map((n) => (
@@ -180,19 +264,21 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
                 key={n.id}
                 yAxisId="p"
                 x={n.t}
-                y={pressureDomain[0] + 1}
-                shape={({ cx, cy }) => (
-                  // 指で押しやすいよう、見た目より広い透明な当たり判定を重ねる
-                  <g
-                    role="button"
-                    aria-label={`メモを開く: ${n.title}`}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setOpenNote(n)}
-                  >
-                    <circle cx={cx} cy={cy} r={18} fill="transparent" />
-                    <StickyIcon size={ICON_SIZE} x={(cx ?? 0) - ICON_SIZE / 2} y={(cy ?? 0) - ICON_SIZE / 2} />
-                  </g>
-                )}
+                y={axisY}
+                shape={({ cx, cy }) => {
+                  const centerY = (cy ?? 0) + NOTE_BELOW_AXIS
+                  return (
+                    <g
+                      role="button"
+                      aria-label={t('chart.openNote', { title: n.title })}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setOpenId(n.id)}
+                    >
+                      <circle cx={cx} cy={centerY} r={HIT_RADIUS} fill="transparent" />
+                      <StickyIcon size={ICON_SIZE} x={(cx ?? 0) - ICON_SIZE / 2} y={centerY - ICON_SIZE / 2} />
+                    </g>
+                  )
+                }}
               />
             ))}
           </ComposedChart>
@@ -201,11 +287,11 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
       <ul className="legend">
         <li>
           <span className="swatch" style={{ background: '#0f766e' }} />
-          気圧 (hPa・左軸)
+          {t('chart.legendPressure')}
         </li>
         <li>
           <span className="swatch" style={{ background: '#dc2626' }} />
-          頭痛 (0–5・右軸)
+          {t('chart.legendHeadache')}
         </li>
         {usedMeds.map(([name, color]) => (
           <li key={name}>
@@ -216,11 +302,13 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
         {notes.length > 0 && (
           <li>
             <StickyIcon size={16} />
-            メモ（タップで表示）
+            {t('chart.legendNote')}
           </li>
         )}
       </ul>
-      {openNote && <NotePopup note={openNote} onClose={() => setOpenNote(null)} />}
+      {opened && opened.type !== 'pressure' && (
+        <RecordPopup record={opened} medicines={medicines} onClose={() => setOpenId(null)} />
+      )}
     </section>
   )
 }

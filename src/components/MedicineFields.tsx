@@ -1,3 +1,5 @@
+import { tabletsLabel } from '../format.ts'
+import { useI18n } from '../i18n/useI18n.ts'
 import { TABLET_OPTIONS, type Medicine } from '../settings.ts'
 
 interface Props {
@@ -12,13 +14,14 @@ const OTHER = '__other__'
 
 /** 薬の選択（設定した薬 or 自由入力）と錠数のドロップダウン。服薬の記録・編集で共通 */
 export function MedicineFields({ medicines, name, tablets, onName, onTablets }: Props) {
+  const { t } = useI18n()
   const isCustom = !medicines.some((m) => m.name === name)
 
   return (
     <>
       <div className="two">
         <label className="field grow">
-          薬
+          {t('field.medicine')}
           <select
             value={isCustom ? OTHER : name}
             onChange={(e) => onName(e.target.value === OTHER ? '' : e.target.value)}
@@ -28,15 +31,15 @@ export function MedicineFields({ medicines, name, tablets, onName, onTablets }: 
                 {m.name}
               </option>
             ))}
-            <option value={OTHER}>その他（入力する）</option>
+            <option value={OTHER}>{t('field.other')}</option>
           </select>
         </label>
         <label className="field">
-          錠数
+          {t('field.tablets')}
           <select value={tablets} onChange={(e) => onTablets(Number(e.target.value))}>
             {TABLET_OPTIONS.map((n) => (
               <option key={n} value={n}>
-                {n}錠
+                {tabletsLabel(n, t)}
               </option>
             ))}
           </select>
@@ -45,7 +48,7 @@ export function MedicineFields({ medicines, name, tablets, onName, onTablets }: 
       {isCustom && (
         <input
           type="text"
-          placeholder="薬の名前を入力"
+          placeholder={t('field.otherPlaceholder')}
           value={name}
           onChange={(e) => onName(e.target.value)}
         />

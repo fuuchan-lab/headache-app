@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useI18n } from '../i18n/useI18n.ts'
 import { shrinkImage } from '../image.ts'
 import type { Medicine } from '../settings.ts'
 import { MedicineFields } from './MedicineFields.tsx'
@@ -10,13 +11,14 @@ interface Props {
 }
 
 export function MedicationForm({ medicines, onSave }: Props) {
+  const { t } = useI18n()
   const [name, setName] = useState(medicines[0]?.name ?? '')
   const [tablets, setTablets] = useState(1)
   const [note, setNote] = useState('')
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const onFile = async (file: File | undefined) => {
@@ -28,9 +30,9 @@ export function MedicationForm({ medicines, onSave }: Props) {
         if (old) URL.revokeObjectURL(old)
         return URL.createObjectURL(blob)
       })
-      setError(null)
+      setPhotoError(false)
     } catch {
-      setError('写真を読み込めませんでした。')
+      setPhotoError(true)
     }
   }
 
@@ -52,7 +54,7 @@ export function MedicationForm({ medicines, onSave }: Props) {
 
   return (
     <section className="card">
-      <h2>薬を飲んだ</h2>
+      <h2>{t('meds.title')}</h2>
       <MedicineFields
         medicines={medicines}
         name={name}
@@ -60,10 +62,10 @@ export function MedicationForm({ medicines, onSave }: Props) {
         onName={setName}
         onTablets={setTablets}
       />
-      <StickyNoteField value={note} onChange={setNote} placeholder="付箋メモ（任意）例: 食後、頭痛がひどくなる前に" />
+      <StickyNoteField value={note} onChange={setNote} placeholder={t('meds.notePlaceholder')} />
       <div className="row">
         <label className="file-btn">
-          📷 写真を撮る／選ぶ
+          {t('meds.photo')}
           <input
             ref={fileRef}
             type="file"
@@ -75,16 +77,16 @@ export function MedicationForm({ medicines, onSave }: Props) {
         </label>
         {photo && (
           <button className="link" onClick={clearPhoto}>
-            写真を外す
+            {t('meds.removePhoto')}
           </button>
         )}
       </div>
-      {preview && <img className="preview" src={preview} alt="服薬の写真" />}
-      {error && <p className="error">{error}</p>}
+      {preview && <img className="preview" src={preview} alt={t('meds.photoAlt')} />}
+      {photoError && <p className="error">{t('meds.photoError')}</p>}
       <button className="primary" disabled={!name.trim()} onClick={submit}>
-        服薬を記録する
+        {t('meds.save')}
       </button>
-      {saved && <p className="ok">記録しました</p>}
+      {saved && <p className="ok">{t('meds.saved')}</p>}
     </section>
   )
 }

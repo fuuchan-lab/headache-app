@@ -13,6 +13,11 @@
   --warning-text: #991b1b;
   --ok-bg: #dcfce7;
   --ok-text: #166534;
+  --gear-light: #a7f3ea;
+  --gear-mid: #14b8a6;
+  --gear-dark: #0b5c55;
+  --gear-hole-light: #4b5563;
+  --gear-hole-dark: #111827;
   color-scheme: light dark;
   font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
 }
@@ -33,6 +38,11 @@
     --warning-text: #fecaca;
     --ok-bg: #052e16;
     --ok-text: #bbf7d0;
+    --gear-light: #d5fff9;
+    --gear-mid: #2dd4bf;
+    --gear-dark: #0f766e;
+    --gear-hole-light: #94a3b8;
+    --gear-hole-dark: #0b1220;
   }
 }
 
@@ -578,29 +588,37 @@ button.danger-btn {
 
 /* 現在の気圧・今後の変化（左）と、天気・気温・湿度（右） */
 .now {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
 }
 
-.now-left {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+/* 現在の気圧の数字。カードの主役なので大きく */
+.big-pressure {
+  font-size: clamp(2.6rem, 11vw, 3.4rem);
+  line-height: 1.1;
 }
 
 .weather {
   display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  /* 背景色は不快指数に応じて画面側で指定する。濃い色なので文字は白 */
+  background: hsl(222 72% 30%);
+  color: #ffffff;
+  transition: background-color 0.5s ease;
+}
+
+.weather-main {
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 4px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
-  text-align: center;
 }
 
 .weather-icon {
@@ -611,66 +629,16 @@ button.danger-btn {
 .weather-label {
   font-size: 0.8rem;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .weather-meta {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-.ahead {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.ahead-item {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-}
-
-.ahead-when {
-  color: var(--muted);
+  gap: 2px;
+  font-size: 0.9rem;
+  line-height: 1.4;
   white-space: nowrap;
-}
-
-.ahead-hpa {
-  font-weight: 700;
-  text-align: right;
-}
-
-.ahead-diff {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1px;
-  min-width: 3.6em;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.ahead-arrow {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-.ahead-up .ahead-diff {
-  color: #16a34a;
-}
-
-.ahead-down .ahead-diff {
-  color: #dc2626;
-}
-
-.ahead-flat .ahead-diff {
-  color: var(--muted);
 }
 
 /* 小さめのスマホ（幅380px未満）: 頭痛ボタンを3列×2段にして文字を読みやすくする */
@@ -732,4 +700,137 @@ textarea.sticky::placeholder {
   font-size: 0.9rem;
   white-space: pre-wrap;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* 設定画面から戻るボタン */
+.back-button {
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.back-button:hover,
+.back-button:focus-visible {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+/* 言語の選択（設定画面） */
+.language-select {
+  width: auto;
+  min-height: 44px;
+  font: inherit;
+  font-size: 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* 記録の詳細ポップアップの写真 */
+.popup-photo {
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+/* 歯車アイコンの立体感（影）と、押した時の回転 */
+.gear {
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 2px 1.5px rgba(0, 0, 0, 0.4));
+  transition: transform 0.4s ease;
+}
+
+.icon-button:hover .gear,
+.icon-button:focus-visible .gear {
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gear {
+    transition: none;
+  }
+}
+
+/* 気圧の小さな推移グラフ（6時間前〜6時間後） */
+.spark {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.spark-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.spark-future {
+  stroke-dasharray: 3 3;
+  opacity: 0.85;
+}
+
+.spark-now-line {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  opacity: 0.6;
+}
+
+.spark-dot {
+  fill: var(--card);
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+
+.spark-dot-now {
+  fill: var(--accent);
+  stroke: var(--card);
+  stroke-width: 1.5;
+}
+
+.spark-label {
+  fill: var(--muted);
+  font-size: 9px;
+}
+
+/* 推移グラフの数値（2時間ごと）。線と重なっても読めるよう、背景色の縁取りを付ける */
+.spark-value {
+  fill: var(--text);
+  font-size: 9.5px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--card);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* タイトルの左のアプリアイコン。文字と同じくらいの大きさ */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.brand-icon {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 24%;
+}
+
+/* 見出しが長くて折り返した時も、右側のボタン（更新など）は右寄せのまま */
+.row > .link {
+  margin-left: auto;
 }

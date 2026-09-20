@@ -1,14 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getPosition, type Position } from '../geo.ts'
 import { fetchPressure, type PressureForecast } from '../weather.ts'
-import { assessTrend, type TrendAssessment } from '../warning.ts'
+
+/** 失敗した段階（位置情報の取得 / 気圧データの取得）と、原因の切り分け用の詳細 */
+export interface PressureError {
+  kind: 'location' | 'pressure'
+  detail: string
+}
+
+function describeError(e: unknown): string {
+  if (typeof e === 'object' && e !== null && 'code' in e && 'message' in e) {
+    // GeolocationPositionError など
+    return `${(e as { code: unknown }).code}: ${String((e as { message: unknown }).message)}`
+  }
+  return e instanceof Error ? `${e.name}: ${e.message}` : String(e)
+}
 
 export interface PressureState {
   status: 'loading' | 'ready' | 'error'
   forecast: PressureForecast | null
   position: Position | null
-  trend: TrendAssessment | null
-  error: string | null
+  /** 失敗した時の内容。表示する文言は画面側で言語に合わせて選ぶ */
+  error: PressureError | null
   /** 位置情報が取得できず前回の位置を使っている */
   staleLocation: boolean
   /** 取得完了時刻 */
@@ -19,7 +32,6 @@ const initial: PressureState = {
   status: 'loading',
   forecast: null,
   position: null,
-  trend: null,
   error: null,
   staleLocation: false,
   fetchedAt: null,
@@ -38,28 +50,36 @@ export function usePressure(onFetched: (forecast: PressureForecast, pos: Positio
 
   const refresh = useCallback(async () => {
     setState((s) => ({ ...s, status: s.forecast ? 'ready' : 'loading', error: null }))
-    try {
-      const { pos, fresh } = await getPosition()
-      const forecast = await fetchPressure(pos.lat, pos.lon)
-      setState({
-        status: 'ready',
-        forecast,
-        position: pos,
-        trend: assessTrend(forecast),
-        error: null,
-        staleLocation: !fresh,
-        fetchedAt: Date.now(),
-      })
-      onFetchedRef.current(forecast, pos)
-    } catch (e) {
-      const message =
-        e instanceof GeolocationPositionError
-          ? '位置情報を取得できませんでした。ブラウザの位置情報の許可を確認してください。'
-          : e instanceof Error
-            ? e.message
-            : '気圧を取得できませんでした。'
-      setState((s) => ({ ...s, status: s.forecast ? 'ready' : 'error', error: message }))
+    const fail = (kind: PressureError['kind'], e: unknown) => {
+      console.error(`[pressure:${kind}]`, e)
+      setState((s) => ({ ...s, status: s.forecast ? 'ready' : 'error', error: { kind, detail: describeError(e) } }))
     }
+
+    let located: Awaited<ReturnType<typeof getPosition>>
+    try {
+      located = await getPosition()
+    } catch (e) {
+      fail('location', e)
+      return
+    }
+    const { pos, fresh } = located
+
+    let forecast: PressureForecast
+    try {
+      forecast = await fetchPressure(pos.lat, pos.lon)
+    } catch (e) {
+      fail('pressure', e)
+      return
+    }
+    setState({
+      status: 'ready',
+      forecast,
+      position: pos,
+      error: null,
+      staleLocation: !fresh,
+      fetchedAt: Date.now(),
+    })
+    onFetchedRef.current(forecast, pos)
   }, [])
 
   useEffect(() => {

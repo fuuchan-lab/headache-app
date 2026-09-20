@@ -41,7 +41,13 @@ export default function App() {
       />
 
       {view === 'settings' ? (
-        <SettingsPage medicines={medicines} onAdd={addMedicine} onRemove={removeMedicine} />
+        <SettingsPage
+          medicines={medicines}
+          onAdd={addMedicine}
+          onRemove={removeMedicine}
+          records={records}
+          loggedIn={auth.account !== null}
+        />
       ) : (
         <>
           <PressureCard pressure={pressure} />

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { Vars } from '../i18n/context.ts'
+import type { MessageKey } from '../i18n/messages.ts'
 import { clearSyncIndex } from '../sync.ts'
 import {
   clearToken,
@@ -20,9 +22,11 @@ export interface DriveAccount {
   folderId: string
 }
 
+/** 画面に出すお知らせ。文言は表示時に言語に合わせて作る */
 export interface Notice {
   kind: 'ok' | 'error'
-  text: string
+  key: MessageKey
+  vars?: Vars
 }
 
 // 開発時の StrictMode で復元処理が2回走らないようにする
@@ -42,7 +46,7 @@ export function useGoogleAuth() {
   const connect = useCallback(
     async (prompt: string | null = null, restoring = false): Promise<boolean> => {
       if (!isDriveConfigured()) {
-        say({ kind: 'error', text: 'Google のクライアントIDが設定されていません。' })
+        say({ kind: 'error', key: 'notice.noClientId' })
         return false
       }
       setConnecting(true)
@@ -64,7 +68,7 @@ export function useGoogleAuth() {
         clearToken()
         const cancelled = e instanceof Error && e.message === 'popup_closed'
         if (!restoring && !cancelled) {
-          say({ kind: 'error', text: 'Googleへのログインに失敗しました。もう一度お試しください。' })
+          say({ kind: 'error', key: 'notice.loginFailed' })
         }
         return false
       } finally {
@@ -83,10 +87,7 @@ export function useGoogleAuth() {
 
   const login = useCallback(async () => {
     if (await connect()) {
-      say({
-        kind: 'ok',
-        text: `Googleアカウントでログインしました。データは Google ドライブの「${driveConfig.folderName}」フォルダーに保存されます。`,
-      })
+      say({ kind: 'ok', key: 'notice.loggedIn', vars: { folder: driveConfig.folderName } })
     }
   }, [connect, say])
 
@@ -101,7 +102,7 @@ export function useGoogleAuth() {
     clearSyncIndex()
     setAccount(null)
     if (await connect('select_account')) {
-      say({ kind: 'ok', text: 'アカウントを切り替えました。' })
+      say({ kind: 'ok', key: 'notice.switched' })
     }
   }, [connect, say])
 

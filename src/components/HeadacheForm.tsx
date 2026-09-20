@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatDateTime } from '../format.ts'
+import { useI18n } from '../i18n/useI18n.ts'
 import type { HeadacheLevel } from '../types.ts'
 import { LevelSlider } from './LevelSlider.tsx'
 import { StickyNoteField } from './StickyNoteField.tsx'
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function HeadacheForm({ pressure, onSave }: Props) {
+  const { t, lang } = useI18n()
   const [level, setLevel] = useState<HeadacheLevel>(0)
   /** スライダーで最後に選択した日時。null ならまだ選択していない */
   const [selectedAt, setSelectedAt] = useState<number | null>(null)
@@ -34,18 +36,17 @@ export function HeadacheForm({ pressure, onSave }: Props) {
 
   return (
     <section className="card">
-      <h2>今の頭痛</h2>
+      <h2>{t('headache.title')}</h2>
       <LevelSlider value={level} onChange={pick} untouched={selectedAt === null} />
-      {selectedAt !== null && <p className="muted">選択した日時: {formatDateTime(selectedAt)}</p>}
-      <StickyNoteField
-        value={note}
-        onChange={setNote}
-        placeholder="付箋メモ（任意）例: こめかみがズキズキ。グラフに付箋マークが付きます"
-      />
+      {selectedAt !== null && (
+        <p className="muted">{t('headache.selected', { time: formatDateTime(selectedAt, lang) })}</p>
+      )}
+      <StickyNoteField value={note} onChange={setNote} placeholder={t('headache.notePlaceholder')} />
       <button className="primary" disabled={selectedAt === null} onClick={submit}>
-        記録する{pressure !== null && `（${pressure.toFixed(1)} hPa）`}
+        {t('headache.save')}
+        {pressure !== null && `（${pressure.toFixed(1)} hPa）`}
       </button>
-      {saved && <p className="ok">記録しました。履歴から日時や内容を編集できます。</p>}
+      {saved && <p className="ok">{t('headache.saved')}</p>}
     </section>
   )
 }

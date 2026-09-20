@@ -1,9 +1,16 @@
-export function formatElapsed(ms: number): string {
+import { LOCALES, type Lang, type TFn } from './i18n/context.ts'
+import type { HeadacheRecord, MedicationRecord } from './types.ts'
+
+export function formatElapsed(ms: number, t: TFn): string {
   const totalMin = Math.max(0, Math.floor(ms / 60_000))
   const h = Math.floor(totalMin / 60)
   const m = totalMin % 60
-  if (h === 0) return `${m}分`
-  return `${h}時間${m}分`
+  return h === 0 ? t('elapsed.m', { m }) : t('elapsed.hm', { h, m })
+}
+
+/** 錠数の表示。英語では 1 だけ単数形にする */
+export function tabletsLabel(n: number, t: TFn): string {
+  return n === 1 ? t('tablets.one', { n }) : t('tablets.other', { n })
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -20,11 +27,17 @@ export function fromLocalInput(value: string): number | null {
   return Number.isNaN(ts) ? null : ts
 }
 
-export function formatDateTime(ts: number): string {
-  return new Date(ts).toLocaleString('ja-JP', {
+export function formatDateTime(ts: number, lang: Lang): string {
+  return new Date(ts).toLocaleString(LOCALES[lang], {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+/** 記録の見出し。頭痛なら「頭痛 3（痛い）」、服薬なら「ロキソニン 1錠」 */
+export function recordTitle(r: HeadacheRecord | MedicationRecord, t: TFn): string {
+  if (r.type === 'headache') return t('history.headache', { level: r.level, label: t(`level.${r.level}`) })
+  return r.tablets === undefined ? r.name : `${r.name} ${tabletsLabel(r.tablets, t)}`
 }

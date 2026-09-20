@@ -1,3 +1,4 @@
+import type { TFn } from './i18n/context.ts'
 import type { PressureForecast } from './weather.ts'
 
 export type WarningLevel = 'none' | 'caution' | 'warning'
@@ -21,30 +22,22 @@ function minAhead(f: PressureForecast, now: number, hours: number): number | nul
   return pts.length ? Math.min(...pts.map((p) => p.hpa)) : null
 }
 
-/** 気圧が下がりつつあるかを判定する */
-export function assessTrend(f: PressureForecast, now = Date.now()): TrendAssessment {
+/** 気圧が下がりつつあるかを判定し、表示する言語のメッセージにして返す */
+export function assessTrend(f: PressureForecast, t: TFn, now: number): TrendAssessment {
   const drop3 = f.current - (minAhead(f, now, 3) ?? f.current)
   const drop6 = f.current - (minAhead(f, now, 6) ?? f.current)
+  const vars = { d3: drop3.toFixed(1), d6: drop6.toFixed(1) }
 
   if (drop3 >= WARNING_3H || drop6 >= WARNING_6H) {
-    return {
-      level: 'warning',
-      message: `気圧が急に下がる見込みです（3時間で約${drop3.toFixed(1)}hPa、6時間で約${drop6.toFixed(1)}hPa低下）。早めの対策を。`,
-    }
+    return { level: 'warning', message: t('trend.warning', vars) }
   }
   if (drop3 >= CAUTION_3H || drop6 >= CAUTION_6H) {
-    return {
-      level: 'caution',
-      message: `気圧が下がりつつあります（3時間で約${drop3.toFixed(1)}hPa、6時間で約${drop6.toFixed(1)}hPa低下の見込み）。`,
-    }
+    return { level: 'caution', message: t('trend.caution', vars) }
   }
 
   const ago3 = f.series.filter((p) => p.t <= now - 3 * HOUR).at(-1)
   if (ago3 && ago3.hpa - f.current >= CAUTION_3H) {
-    return {
-      level: 'caution',
-      message: `ここ3時間で気圧が約${(ago3.hpa - f.current).toFixed(1)}hPa下がっています。`,
-    }
+    return { level: 'caution', message: t('trend.past', { d: (ago3.hpa - f.current).toFixed(1) }) }
   }
-  return { level: 'none', message: '気圧は安定しています。' }
+  return { level: 'none', message: t('trend.stable') }
 }

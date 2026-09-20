@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { GoogleAuth } from '../hooks/useGoogleAuth.ts'
 import type { SyncState } from '../hooks/useSync.ts'
+import { LOCALES, type TFn } from '../i18n/context.ts'
+import { useI18n } from '../i18n/useI18n.ts'
+import { GearIcon } from './GearIcon.tsx'
+import { driveConfig } from '../drive.ts'
 
 interface Props {
   view: 'home' | 'settings'
@@ -12,27 +16,32 @@ interface Props {
 
 /** アプリ名・設定ボタン・Googleログインボタン（CapLog と同じ並び） */
 export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Props) {
+  const { t } = useI18n()
   const { account, connecting, login } = auth
   const [accountOpen, setAccountOpen] = useState(false)
 
-  const label = connecting ? '接続中…' : account ? 'Google接続中' : 'ログイン'
+  const label = connecting ? t('google.connecting') : account ? t('google.connected') : t('google.login')
 
   return (
     <>
       <header className="topbar">
         <div>
-          <p className="eyebrow">頭痛・服薬・気圧の記録帳</p>
-          <h1>頭痛ログ</h1>
+          <p className="eyebrow">{t('header.eyebrow')}</p>
+          <h1 className="brand">
+            <img className="brand-icon" src="./favicon.svg" alt="" />
+            {t('header.title')}
+          </h1>
         </div>
         <div className="topbar-actions">
-          <button
-            className="icon-button"
-            onClick={onToggleSettings}
-            aria-label={view === 'home' ? '設定を開く' : '設定を閉じる'}
-            title={view === 'home' ? '設定' : '戻る'}
-          >
-            {view === 'home' ? '⚙' : '←'}
-          </button>
+          {view === 'home' ? (
+            <button className="icon-button" onClick={onToggleSettings} aria-label={t('header.openSettings')} title={t('header.settings')}>
+              <GearIcon />
+            </button>
+          ) : (
+            <button className="back-button" onClick={onToggleSettings}>
+              {t('header.back')}
+            </button>
+          )}
           <button
             className="google-button"
             disabled={connecting}
@@ -56,7 +65,7 @@ export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Pr
           role={auth.notice.kind === 'ok' ? 'status' : 'alert'}
           onClick={auth.dismissNotice}
         >
-          {auth.notice.text}
+          {t(auth.notice.key, auth.notice.vars)}
         </p>
       )}
 
@@ -89,19 +98,19 @@ interface ModalProps {
   onSignOut: () => void
 }
 
-function syncText(sync: SyncState, unsyncedCount: number): string {
-  if (sync.status === 'syncing') return '同期中…'
-  if (sync.status === 'error') {
-    return `同期できませんでした（未同期 ${unsyncedCount}件）。通信状況を確認するか、ログインし直してください。`
-  }
-  if (unsyncedCount > 0) return `未同期の記録が ${unsyncedCount}件 あります。`
+function syncText(sync: SyncState, unsyncedCount: number, t: TFn, locale: string): string {
+  if (sync.status === 'syncing') return t('sync.syncing')
+  if (sync.status === 'error') return t('sync.error', { n: unsyncedCount })
+  if (unsyncedCount > 0) return t('sync.unsynced', { n: unsyncedCount })
   if (sync.lastSyncAt) {
-    return `同期済み（${new Date(sync.lastSyncAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}）`
+    const time = new Date(sync.lastSyncAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+    return t('sync.done', { time })
   }
-  return '同期の準備中です。'
+  return t('sync.preparing')
 }
 
 function AccountModal({ account, sync, unsyncedCount, onClose, onSwitch, onSignOut }: ModalProps) {
+  const { t, lang } = useI18n()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -114,24 +123,24 @@ function AccountModal({ account, sync, unsyncedCount, onClose, onSwitch, onSignO
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="account-title" onClick={(e) => e.stopPropagation()}>
         <div className="row">
-          <h2 id="account-title">アカウント</h2>
-          <button className="link" onClick={onClose} aria-label="閉じる">
+          <h2 id="account-title">{t('account.title')}</h2>
+          <button className="link" onClick={onClose} aria-label={t('common.close')}>
             ✕
           </button>
         </div>
-        <p>{account.email ?? account.name ?? 'Googleアカウント'}</p>
-        <p className="muted">データの保存先: Google ドライブの「頭痛と気圧の記録」フォルダー</p>
+        <p>{account.email ?? account.name ?? t('account.fallback')}</p>
+        <p className="muted">{t('account.storage', { folder: driveConfig.folderName })}</p>
         <p className={sync.status === 'error' ? 'error' : 'muted'} role="status">
-          {syncText(sync, unsyncedCount)}
+          {syncText(sync, unsyncedCount, t, LOCALES[lang])}
         </p>
         <button className="secondary" disabled={sync.status === 'syncing'} onClick={() => void sync.syncNow()}>
-          今すぐ同期
+          {t('account.syncNow')}
         </button>
         <button className="secondary" onClick={onSwitch}>
-          アカウントを切り替え
+          {t('account.switch')}
         </button>
         <button className="danger-btn" onClick={onSignOut}>
-          ログアウト
+          {t('account.signOut')}
         </button>
       </div>
     </div>
