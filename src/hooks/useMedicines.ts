@@ -43,10 +43,10 @@ export function useMedicines() {
     [all, persist],
   )
 
-  /** 名前と色を変える。名前を変えた時は、過去の記録の薬名も直せるよう、変更前後の名前を返す */
+  /** 名前・色・服薬間隔を変える。名前を変えた時は、過去の記録の薬名も直せるよう、変更前後の名前を返す */
   const update = useCallback(
-    (id: string, name: string, color: string): UpdateResult => {
-      const result = updateMedicine(all, id, name, color)
+    (id: string, name: string, color: string, intervalHours: number | null): UpdateResult => {
+      const result = updateMedicine(all, id, name, color, undefined, intervalHours)
       if (result.ok) persist(result.medicines)
       return result
     },

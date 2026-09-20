@@ -11,8 +11,8 @@ import { PillIcon } from './PillIcon.tsx'
 interface Props {
   medicines: Medicine[]
   onAdd: (name: string) => boolean
-  /** 名前・色を変える。名前を変えた時は、過去の記録の薬名も直す */
-  onEdit: (id: string, name: string, color: string) => Promise<EditResult>
+  /** 名前・色・服薬間隔を変える。名前を変えた時は、過去の記録の薬名も直す */
+  onEdit: (id: string, name: string, color: string, intervalHours: number | null) => Promise<EditResult>
   onRemove: (id: string) => void
   /** 書き出す記録（削除済みを除く） */
   records: AppRecord[]
@@ -86,7 +86,7 @@ export function SettingsPage({ medicines, onAdd, onEdit, onRemove, records, logg
                   <MedicineEditor
                     medicine={m}
                     affectedCount={records.filter((r) => r.type === 'medication' && r.name === m.name).length}
-                    onSave={(newName, color) => onEdit(m.id, newName, color)}
+                    onSave={(newName, color, interval) => onEdit(m.id, newName, color, interval)}
                     onCancel={() => setEditingId(null)}
                   />
                 </li>
@@ -97,6 +97,9 @@ export function SettingsPage({ medicines, onAdd, onEdit, onRemove, records, logg
                 <span className="med-name">
                   <PillIcon color={m.color} size={22} />
                   {shown}
+                  {m.intervalHours !== undefined && (
+                    <span className="muted">{t('settings.intervalShort', { h: m.intervalHours })}</span>
+                  )}
                 </span>
                 <span>
                   <button className="link" onClick={() => setEditingId(m.id)}>

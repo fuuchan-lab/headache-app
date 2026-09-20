@@ -12,6 +12,8 @@ export interface Medicine {
   updatedAt: number
   /** 削除済み。他の端末へ削除を伝えるため、薬自体は残す */
   deleted?: boolean
+  /** 服薬間隔（時間）。決めていなければ持たない */
+  intervalHours?: number
 }
 
 /** 設定にない薬（自由入力）の色 */
@@ -43,6 +45,7 @@ function normalize(list: Partial<Medicine>[]): Medicine[] {
     createdAt: m.createdAt ?? i,
     updatedAt: m.updatedAt ?? 0,
     ...(m.deleted ? { deleted: true } : {}),
+    ...(typeof m.intervalHours === 'number' && m.intervalHours > 0 ? { intervalHours: m.intervalHours } : {}),
   }))
 }
 
@@ -114,13 +117,43 @@ export type UpdateResult =
   | { ok: true; medicines: Medicine[]; oldName: string; newName: string }
   | { ok: false; reason: 'empty' | 'duplicate' | 'missing' }
 
-/** 薬の名前と色を変える。初期の薬でも、登録した薬でも同じように編集できる */
+/** 服薬間隔の入力できる範囲（時間） */
+export const INTERVAL_MIN_HOURS = 0.5
+export const INTERVAL_MAX_HOURS = 72
+
+/** 服薬間隔の入力の読み取り結果。空欄は「決めていない」(null)として受け付ける */
+export type IntervalParse = { ok: true; hours: number | null } | { ok: false }
+
+/** 入力された文字から服薬間隔（時間）を読み取る。全角の数字も受け付け、範囲外や数字でないものは受け付けない */
+export function parseIntervalHours(raw: string): IntervalParse {
+  const text = raw
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[．。]/g, '.')
+    .trim()
+  if (text === '') return { ok: true, hours: null }
+  if (!/^\d+(\.\d+)?$/.test(text)) return { ok: false }
+  const hours = Number(text)
+  if (hours < INTERVAL_MIN_HOURS || hours > INTERVAL_MAX_HOURS) return { ok: false }
+  return { ok: true, hours: Math.round(hours * 100) / 100 }
+}
+
+/** 服薬間隔を設定する。null なら「決めていない」に戻す（項目ごと持たない） */
+function withInterval(m: Medicine, hours: number | null | undefined): Medicine {
+  const { intervalHours: _previous, ...rest } = m
+  return hours === null || hours === undefined ? rest : { ...rest, intervalHours: hours }
+}
+
+/**
+ * 薬の名前・色・服薬間隔を変える。初期の薬でも、登録した薬でも同じように編集できる。
+ * intervalHours は、省略（undefined）なら今のまま、null なら「決めていない」に戻す。
+ */
 export function updateMedicine(
   list: Medicine[],
   id: string,
   rawName: string,
   color: string,
   now = Date.now(),
+  intervalHours?: number | null,
 ): UpdateResult {
   const newName = canonicalMedicineName(rawName)
   if (!newName) return { ok: false, reason: 'empty' }
@@ -129,7 +162,11 @@ export function updateMedicine(
   if (visibleMedicines(list).some((m) => m.id !== id && m.name === newName)) return { ok: false, reason: 'duplicate' }
   return {
     ok: true,
-    medicines: list.map((m) => (m.id === id ? { ...m, name: newName, color, updatedAt: now } : m)),
+    medicines: list.map((m) =>
+      m.id === id
+        ? withInterval({ ...m, name: newName, color, updatedAt: now }, intervalHours === undefined ? m.intervalHours : intervalHours)
+        : m,
+    ),
     oldName: current.name,
     newName,
   }

@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { canonicalMedicineName, localizeMedicineName } from './medicineNames.ts'
-import { DEFAULT_MEDICINES, MEDICINE_COLORS, addMedicine, colorFor, updateMedicine } from './settings.ts'
+import {
+  DEFAULT_MEDICINES,
+  MEDICINE_COLORS,
+  addMedicine,
+  colorFor,
+  parseIntervalHours,
+  updateMedicine,
+} from './settings.ts'
 
 test('初期の薬は、言語に合わせた名前で表示する', () => {
   assert.equal(localizeMedicineName('ロキソニン', 'en'), 'Loxonin')
@@ -72,4 +79,43 @@ test('updateMedicine: 空欄・他の薬と同じ名前・存在しないIDは�
 
 test('updateMedicine: 自分自身と同じ名前のままなら保存できる', () => {
   assert.ok(updateMedicine(DEFAULT_MEDICINES, 'default-0', 'ロキソニン', '#111111').ok)
+})
+
+test('parseIntervalHours: 空欄は「決めていない」として受け付ける', () => {
+  assert.deepEqual(parseIntervalHours(''), { ok: true, hours: null })
+  assert.deepEqual(parseIntervalHours('   '), { ok: true, hours: null })
+})
+
+test('parseIntervalHours: 0.5〜72 の数字（半角・全角）を時間として読み取る', () => {
+  assert.deepEqual(parseIntervalHours('6'), { ok: true, hours: 6 })
+  assert.deepEqual(parseIntervalHours(' 4.5 '), { ok: true, hours: 4.5 })
+  assert.deepEqual(parseIntervalHours('０.５'), { ok: true, hours: 0.5 })
+  assert.deepEqual(parseIntervalHours('８'), { ok: true, hours: 8 })
+  assert.deepEqual(parseIntervalHours('72'), { ok: true, hours: 72 })
+  assert.deepEqual(parseIntervalHours('6．5'), { ok: true, hours: 6.5 })
+})
+
+test('parseIntervalHours: 範囲外・数字でないものは受け付けない', () => {
+  for (const bad of ['0', '0.4', '73', '-1', 'abc', '6時間', '1e2', '6,5', '.5', '5.']) {
+    assert.deepEqual(parseIntervalHours(bad), { ok: false }, bad)
+  }
+})
+
+test('updateMedicine: 服薬間隔を設定でき、空欄(null)で「決めていない」に戻る。省略なら今のまま', () => {
+  const set = updateMedicine(DEFAULT_MEDICINES, 'default-0', 'ロキソニン', '#111111', 1_000, 6)
+  assert.ok(set.ok)
+  if (!set.ok) return
+  assert.equal(set.medicines[0].intervalHours, 6)
+  // 服薬間隔を省略して保存しても、設定した値は残る
+  const keep = updateMedicine(set.medicines, 'default-0', 'ロキソニン', '#222222', 2_000)
+  assert.ok(keep.ok && keep.medicines[0].intervalHours === 6)
+  // 空欄で保存すると、項目ごとなくなる
+  const cleared = updateMedicine(set.medicines, 'default-0', 'ロキソニン', '#111111', 3_000, null)
+  assert.ok(cleared.ok)
+  if (!cleared.ok) return
+  assert.ok(!('intervalHours' in cleared.medicines[0]))
+})
+
+test('服薬間隔がない薬は、初期の薬も含めて、項目を持たない', () => {
+  for (const m of DEFAULT_MEDICINES) assert.ok(!('intervalHours' in m))
 })

@@ -33,8 +33,13 @@ export default function App() {
   })
 
   /** 薬の名前・色を変える。名前を変えた時は、過去の記録の薬名も新しい名前にそろえる */
-  const editMedicine = async (id: string, name: string, color: string): Promise<EditResult> => {
-    const result = updateMedicineSetting(id, name, color)
+  const editMedicine = async (
+    id: string,
+    name: string,
+    color: string,
+    intervalHours: number | null,
+  ): Promise<EditResult> => {
+    const result = updateMedicineSetting(id, name, color, intervalHours)
     if (!result.ok) return result.reason === 'duplicate' ? 'duplicate' : 'empty'
     if (result.oldName !== result.newName) await renameMedication(result.oldName, result.newName)
     return 'ok'

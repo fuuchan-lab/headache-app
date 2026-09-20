@@ -5,7 +5,7 @@ import type { Medicine } from './settings.ts'
 const byOrder = (a: Medicine, b: Medicine) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 
 /** 比べる時に使う、内容を一意に表す文字列 */
-const fingerprint = (m: Medicine) => JSON.stringify([m.id, m.name, m.color, m.createdAt, m.updatedAt, !!m.deleted])
+const fingerprint = (m: Medicine) => JSON.stringify([m.id, m.name, m.color, m.createdAt, m.updatedAt, !!m.deleted, m.intervalHours ?? null])
 
 /** 同じ更新時刻で内容が違う時も、どの端末でも同じ方を選べるようにする */
 function pick(a: Medicine, b: Medicine): Medicine {
@@ -63,6 +63,7 @@ export function parseSettings(text: string): Medicine[] {
         createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0,
         updatedAt: typeof m.updatedAt === 'number' ? m.updatedAt : 0,
         ...(m.deleted ? { deleted: true } : {}),
+        ...(typeof m.intervalHours === 'number' && m.intervalHours > 0 ? { intervalHours: m.intervalHours } : {}),
       },
     ]
   })

@@ -138,3 +138,29 @@ test('planSettingsSync: 両方に別々の変更がある時は、合わせた�
   assert.equal(plan.upload, true)
   assert.equal(visibleMedicines(plan.merged).length, 5)
 })
+
+test('服薬間隔の変更も、更新時刻の新しい方が採用され、ドライブとの往復でも失われない', () => {
+  const edited = updateMedicine(DEFAULT_MEDICINES, 'default-0', 'ロキソニン', '#123456', 1_000, 6)
+  assert.ok(edited.ok)
+  if (!edited.ok) return
+  const merged = mergeMedicines(DEFAULT_MEDICINES, edited.medicines)
+  assert.equal(merged[0].intervalHours, 6)
+  assert.ok(sameMedicines(merged, mergeMedicines(edited.medicines, DEFAULT_MEDICINES)))
+  const roundTrip = parseSettings(serializeSettings(merged))
+  assert.equal(roundTrip[0].intervalHours, 6)
+  assert.ok(sameMedicines(roundTrip, merged))
+  // 服薬間隔だけが違う場合も、別の内容として扱われる（同期で送られる）
+  const plan = planSettingsSync(edited.medicines, DEFAULT_MEDICINES, true, false)
+  assert.equal(plan.upload, true)
+})
+
+test('他の端末で服薬間隔をなくした場合も、新しい方（なし）が採用される', () => {
+  const set = updateMedicine(DEFAULT_MEDICINES, 'default-1', 'カロナール', '#111111', 1_000, 4)
+  assert.ok(set.ok)
+  if (!set.ok) return
+  const cleared = updateMedicine(set.medicines, 'default-1', 'カロナール', '#111111', 2_000, null)
+  assert.ok(cleared.ok)
+  if (!cleared.ok) return
+  const merged = mergeMedicines(set.medicines, cleared.medicines)
+  assert.equal(merged[1].intervalHours, undefined)
+})

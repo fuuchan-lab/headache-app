@@ -173,6 +173,7 @@ p {
 
 /* iOS Safari は16px未満の入力欄にフォーカスすると画面が拡大されるため16pxにする */
 input[type='text'],
+input[type='number'],
 input[type='datetime-local'],
 select {
   width: 100%;
@@ -872,16 +873,16 @@ textarea.sticky::placeholder {
   align-self: flex-start;
 }
 
-/* 薬の色の選択 */
+/* 薬の色の選択。4つ×2段の小さめの丸 */
 .swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 26px);
+  gap: 8px;
 }
 
 .swatch-btn {
-  width: 36px;
-  height: 36px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 2px solid var(--card);
   border-radius: 50%;
@@ -889,7 +890,20 @@ textarea.sticky::placeholder {
 }
 
 .swatch-btn[aria-checked='true'] {
-  box-shadow: 0 0 0 3px var(--text);
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+/* 薬の名前の下の行: 左に服薬間隔、右に色の選択。狭い画面では色が下に回り込む */
+.interval-color {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+.interval-color > .field:first-child {
+  flex: 1 1 11em;
 }
 
 /* 気圧が上がりつつある時のお知らせ */
@@ -1018,4 +1032,27 @@ textarea.sticky::placeholder {
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.5;
+}
+
+/* 服薬間隔の入力（数字と単位を1行に） */
+.interval-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.interval-row input {
+  width: 7em;
+}
+
+/* 薬の名前の左のカプセルアイコン（選んだ色がすぐ反映される） */
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.name-row input {
+  flex: 1;
+  min-width: 0;
 }
