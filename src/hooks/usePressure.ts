@@ -7,6 +7,8 @@ import { fetchPressure, type PressureForecast } from '../weather.ts'
 export interface PressureError {
   kind: 'location' | 'pressure'
   detail: string
+  /** 位置情報のエラーコード（1: 許可されていない / 2: 特定できない / 3: 時間切れ）。それ以外は undefined */
+  code?: number
 }
 
 export interface PressureState {
@@ -30,6 +32,13 @@ const initial: PressureState = {
   fetchedAt: null,
 }
 
+function geolocationCode(e: unknown): number | undefined {
+  if (typeof e === 'object' && e !== null && 'code' in e && typeof (e as { code: unknown }).code === 'number') {
+    return (e as { code: number }).code
+  }
+  return undefined
+}
+
 /**
  * 現在地の気圧を取得する。アプリを開いた時・画面に戻った時に更新し、
  * 取得できるたびに onFetched を呼ぶ（記録の保存は呼び出し側で行う）。
@@ -50,7 +59,7 @@ export function usePressure(onFetched: (forecast: PressureForecast, pos: Positio
         // 電波がなくて気圧が取れなくても、GPS で場所が取れていれば、記録にはその場所を残す（気圧はなし）
         position: !s.forecast && freshPosition ? freshPosition : s.position,
         status: s.forecast ? 'ready' : 'error',
-        error: { kind, detail: describeError(e) },
+        error: { kind, detail: describeError(e), code: geolocationCode(e) },
       }))
     }
 

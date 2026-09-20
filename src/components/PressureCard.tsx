@@ -20,6 +20,15 @@ interface Props {
   medicines: Medicine[]
 }
 
+/** 失敗の原因に合った案内の文言。位置情報は、コードで、許可・特定できない・応答なし、を出し分ける */
+function errorMessageKey(error: NonNullable<PressureState['error']>) {
+  if (error.kind === 'pressure') return 'err.pressure' as const
+  if (error.code === 1) return 'err.locationDenied' as const
+  if (error.code === 2) return 'err.locationUnavailable' as const
+  if (error.code === 3) return 'err.locationTimeout' as const
+  return 'err.location' as const
+}
+
 export function PressureCard({ pressure, records, medicines }: Props) {
   const { t, lang } = useI18n()
   const [adviceOpen, setAdviceOpen] = useState(false)
@@ -99,7 +108,7 @@ export function PressureCard({ pressure, records, medicines }: Props) {
       {error && error.kind === 'pressure' && !online && <p className="error">{t('err.offline')}</p>}
       {error && !(error.kind === 'pressure' && !online) && (
         <>
-          <p className="error">{t(error.kind === 'location' ? 'err.location' : 'err.pressure')}</p>
+          <p className="error">{t(errorMessageKey(error))}</p>
           <p className="muted small">
             {t('err.detail')}: {error.detail}
           </p>
