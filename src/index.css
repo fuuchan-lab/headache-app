@@ -1098,19 +1098,27 @@ textarea.sticky::placeholder {
   }
 }
 
-/* 気圧が下がる時のお知らせ（気圧カードの中だけ）は、ゆっくり点滅させて気づきやすくする。文字が読めるよう、薄くなりすぎないようにする */
+/*
+ * 気圧が下がる時のお知らせ（気圧カードの中だけ）は、後ろの背景色だけをゆっくり点滅させて気づきやすくする。
+ * 文字は点滅させない（透明度は変えず、背景色だけを、カードの色に近い色との間で行き来させる）。
+ */
 @keyframes banner-blink {
   0%,
   100% {
-    opacity: 1;
+    background-color: var(--blink-from);
   }
   50% {
-    opacity: 0.5;
+    background-color: color-mix(in srgb, var(--blink-from) 22%, var(--card));
   }
 }
 
-.pressure-advice .banner-caution,
+.pressure-advice .banner-caution {
+  --blink-from: var(--caution-bg);
+  animation: banner-blink 2.8s ease-in-out infinite;
+}
+
 .pressure-advice .banner-warning {
+  --blink-from: var(--warning-bg);
   animation: banner-blink 2.8s ease-in-out infinite;
 }
 
