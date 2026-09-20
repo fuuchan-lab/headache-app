@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { describeError } from '../errors.ts'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { describeError, isNetworkError } from '../errors.ts'
 import type { Vars } from '../i18n/context.ts'
 import type { MessageKey } from '../i18n/messages.ts'
 import { clearSyncIndex } from '../sync.ts'
@@ -35,10 +35,33 @@ export interface Notice {
 // 開発時の StrictMode で復元処理が2回走らないようにする
 let restoreStarted = false
 
+const ACCOUNT_KEY = 'headache-drive-account'
+
+/** 前回ログインできた時のアカウント情報。電波がない状態で開いた時に、ログイン中として表示するために保存しておく */
+function loadCachedAccount(): DriveAccount | null {
+  try {
+    const raw = localStorage.getItem(ACCOUNT_KEY)
+    return raw ? (JSON.parse(raw) as DriveAccount) : null
+  } catch {
+    return null
+  }
+}
+
+function saveCachedAccount(account: DriveAccount | null) {
+  try {
+    if (account) localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account))
+    else localStorage.removeItem(ACCOUNT_KEY)
+  } catch {
+    // 保存できなくても、ログイン自体には影響しない
+  }
+}
+
 export function useGoogleAuth() {
   const [account, setAccount] = useState<DriveAccount | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
+  /** 電波がなくて、前回のログイン状態を保ったまま開いている（ネットが戻ったら再接続する） */
+  const offlineRestored = useRef(false)
 
   const say = useCallback((n: Notice) => {
     setNotice(n)
@@ -63,9 +86,19 @@ export function useGoogleAuth() {
         const folderId = await ensureFolder()
         const info = await fetchUserInfo()
         setSession(true)
-        setAccount({ email: info.email, name: info.name, avatarUrl: info.picture, folderId })
+        const next = { email: info.email, name: info.name, avatarUrl: info.picture, folderId }
+        saveCachedAccount(next)
+        offlineRestored.current = false
+        setAccount(next)
         return true
       } catch (e) {
+        // 電波がないだけなら、ログインを取り消さない。前回のアカウントのまま開き、ネットが戻ったら再接続する
+        const cached = loadCachedAccount()
+        if (restoring && cached && (isNetworkError(e) || navigator.onLine === false)) {
+          offlineRestored.current = true
+          setAccount(cached)
+          return true
+        }
         setAccount(null)
         setSession(false)
         clearToken()
@@ -89,6 +122,15 @@ export function useGoogleAuth() {
     if (isDriveConfigured() && hasSession()) void connect(null, true)
   }, [connect])
 
+  // ネットが戻ったら、電波なしで開いた時のログイン状態を、本当のログイン（トークンの再取得）に切り替える
+  useEffect(() => {
+    const onOnline = () => {
+      if (offlineRestored.current && hasSession()) void connect(null, true)
+    }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [connect])
+
   const login = useCallback(async () => {
     if (await connect()) {
       say({ kind: 'ok', key: 'notice.loggedIn', vars: { folder: driveConfig.folderName } })
@@ -98,12 +140,16 @@ export function useGoogleAuth() {
   const signOut = useCallback(() => {
     signOutDrive()
     clearSyncIndex()
+    saveCachedAccount(null)
+    offlineRestored.current = false
     setAccount(null)
   }, [])
 
   const switchAccount = useCallback(async () => {
     signOutDrive()
     clearSyncIndex()
+    saveCachedAccount(null)
+    offlineRestored.current = false
     setAccount(null)
     if (await connect('select_account')) {
       say({ kind: 'ok', key: 'notice.switched' })

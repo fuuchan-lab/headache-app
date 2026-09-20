@@ -8,12 +8,16 @@ import { PressureCard } from './components/PressureCard.tsx'
 import { PressureChart } from './components/PressureChart.tsx'
 import { SettingsPage } from './components/SettingsPage.tsx'
 import { useGoogleAuth } from './hooks/useGoogleAuth.ts'
+import { useI18n } from './i18n/useI18n.ts'
+import { useOnline } from './hooks/useOnline.ts'
 import { useMedicines } from './hooks/useMedicines.ts'
 import { usePressure } from './hooks/usePressure.ts'
 import { useRecords, type Snapshot } from './hooks/useRecords.ts'
 import { useSync } from './hooks/useSync.ts'
 
 export default function App() {
+  const { t } = useI18n()
+  const online = useOnline()
   const [view, setView] = useState<'home' | 'settings'>('home')
   const { records, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, renameMedication, remove } =
     useRecords()
@@ -60,6 +64,13 @@ export default function App() {
         sync={sync}
         unsyncedCount={unsyncedCount}
       />
+
+      {/* 電波がない場所でも記録できることを伝える。ネットにつながると自動で同期する */}
+      {!online && (
+        <p className="banner banner-info" role="status">
+          📴 {t('offline.banner')}
+        </p>
+      )}
 
       {view === 'settings' ? (
         <SettingsPage

@@ -108,6 +108,7 @@ interface ModalProps {
 
 function syncText(sync: SyncState, unsyncedCount: number, t: TFn, locale: string): string {
   if (sync.status === 'syncing') return t('sync.syncing')
+  if (sync.status === 'offline') return t('sync.offline', { n: unsyncedCount })
   if (sync.status === 'error') return t('sync.error', { n: unsyncedCount })
   if (unsyncedCount > 0) return t('sync.unsynced', { n: unsyncedCount })
   if (sync.lastSyncAt) {

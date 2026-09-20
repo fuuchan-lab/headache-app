@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { PressureState } from '../hooks/usePressure.ts'
+import { useOnline } from '../hooks/useOnline.ts'
 import { usePlaceName } from '../hooks/usePlaceName.ts'
 import { discomfortCategory, discomfortColor, discomfortIndex } from '../discomfort.ts'
 import { useI18n } from '../i18n/useI18n.ts'
@@ -22,6 +23,7 @@ interface Props {
 export function PressureCard({ pressure, records, medicines }: Props) {
   const { t, lang } = useI18n()
   const [adviceOpen, setAdviceOpen] = useState(false)
+  const online = useOnline()
   const { status, forecast, error, staleLocation, fetchedAt, refresh, position } = pressure
   // 気圧を取得している位置の市区町村名（取得できなければ付けない）
   const place = usePlaceName(position, lang)
@@ -93,7 +95,9 @@ export function PressureCard({ pressure, records, medicines }: Props) {
       </div>
       {adviceOpen && trend && <AdvicePopup direction={trend.direction} onClose={() => setAdviceOpen(false)} />}
       {staleLocation && <p className="muted">{t('pressure.staleLocation')}</p>}
-      {error && (
+      {/* 電波がなくて気圧を取れない時は、原因が分かるように、専用のメッセージにする */}
+      {error && error.kind === 'pressure' && !online && <p className="error">{t('err.offline')}</p>}
+      {error && !(error.kind === 'pressure' && !online) && (
         <>
           <p className="error">{t(error.kind === 'location' ? 'err.location' : 'err.pressure')}</p>
           <p className="muted small">

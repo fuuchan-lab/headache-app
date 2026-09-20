@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { describeError } from '../errors.ts'
 import { syncNow } from '../sync.ts'
 
-export type SyncStatus = 'idle' | 'syncing' | 'ok' | 'error'
+export type SyncStatus = 'idle' | 'syncing' | 'ok' | 'error' | 'offline'
 
 const FOCUS_SYNC_INTERVAL = 60_000
 
@@ -29,6 +29,11 @@ export function useSync(
   const lastRunRef = useRef(0)
 
   const run = useCallback(async () => {
+    // 電波がない間は同期を試さない（記録は端末に残り、ネットが戻ったら同期する）
+    if (navigator.onLine === false) {
+      setStatus('offline')
+      return
+    }
     lastRunRef.current = Date.now()
     setStatus('syncing')
     try {
@@ -68,11 +73,14 @@ export function useSync(
       }
     }
     const onOnline = () => void run()
+    const onOffline = () => setStatus('offline')
     document.addEventListener('visibilitychange', trigger)
     window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
     return () => {
       document.removeEventListener('visibilitychange', trigger)
       window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
     }
   }, [loggedIn, run])
 

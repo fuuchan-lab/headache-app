@@ -43,9 +43,15 @@ export function usePressure(onFetched: (forecast: PressureForecast, pos: Positio
 
   const refresh = useCallback(async () => {
     setState((s) => ({ ...s, status: s.forecast ? 'ready' : 'loading', error: null }))
-    const fail = (kind: PressureError['kind'], e: unknown) => {
+    const fail = (kind: PressureError['kind'], e: unknown, freshPosition?: Position) => {
       console.error(`[pressure:${kind}]`, e)
-      setState((s) => ({ ...s, status: s.forecast ? 'ready' : 'error', error: { kind, detail: describeError(e) } }))
+      setState((s) => ({
+        ...s,
+        // 電波がなくて気圧が取れなくても、GPS で場所が取れていれば、記録にはその場所を残す（気圧はなし）
+        position: !s.forecast && freshPosition ? freshPosition : s.position,
+        status: s.forecast ? 'ready' : 'error',
+        error: { kind, detail: describeError(e) },
+      }))
     }
 
     let located: Awaited<ReturnType<typeof getPosition>>
@@ -61,7 +67,7 @@ export function usePressure(onFetched: (forecast: PressureForecast, pos: Positio
     try {
       forecast = await fetchPressure(pos.lat, pos.lon)
     } catch (e) {
-      fail('pressure', e)
+      fail('pressure', e, fresh ? pos : undefined)
       return
     }
     setState({
@@ -81,8 +87,14 @@ export function usePressure(onFetched: (forecast: PressureForecast, pos: Positio
     const onVisible = () => {
       if (document.visibilityState === 'visible') void refresh()
     }
+    // ネットにつながった時に、その場所の気圧を取り直して記録する
+    const onOnline = () => void refresh()
     document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onOnline)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onOnline)
+    }
   }, [refresh])
 
   return { ...state, refresh }
