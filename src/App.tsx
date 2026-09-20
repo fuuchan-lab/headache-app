@@ -72,7 +72,7 @@ export default function App() {
         />
       ) : (
         <>
-          <PressureCard pressure={pressure} records={records} />
+          <PressureCard pressure={pressure} records={records} medicines={medicines} />
           <HeadacheForm
             pressure={pressure.forecast?.current ?? null}
             onSave={(level, note, ts) => addHeadache(level, note, ts, snapshot())}

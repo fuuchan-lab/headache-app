@@ -5,6 +5,7 @@ import { discomfortCategory, discomfortColor, discomfortIndex } from '../discomf
 import { useI18n } from '../i18n/useI18n.ts'
 import { assessTrend } from '../warning.ts'
 import { describeWeather } from '../weather.ts'
+import type { Medicine } from '../settings.ts'
 import type { AppRecord } from '../types.ts'
 import { AdvicePopup } from './AdvicePopup.tsx'
 import { MedStatus } from './MedStatus.tsx'
@@ -14,9 +15,11 @@ interface Props {
   pressure: PressureState & { refresh: () => void }
   /** 「最後に薬を飲んでから」の表示に使う */
   records: AppRecord[]
+  /** 服薬間隔（次の服薬までの時間）の計算に使う */
+  medicines: Medicine[]
 }
 
-export function PressureCard({ pressure, records }: Props) {
+export function PressureCard({ pressure, records, medicines }: Props) {
   const { t, lang } = useI18n()
   const [adviceOpen, setAdviceOpen] = useState(false)
   const { status, forecast, error, staleLocation, fetchedAt, refresh, position } = pressure
@@ -70,7 +73,7 @@ export function PressureCard({ pressure, records }: Props) {
 
       {/* 下段: 左に「最後に薬を飲んでから」、右に気圧の変化のお知らせと「アドバイス」ボタン */}
       <div className={`pressure-bottom${trend ? '' : ' pressure-bottom-single'}`}>
-        <MedStatus records={records} />
+        <MedStatus records={records} medicines={medicines} />
         {trend && (
           <div className="pressure-advice">
             <p

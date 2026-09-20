@@ -1056,3 +1056,17 @@ textarea.sticky::placeholder {
   flex: 1;
   min-width: 0;
 }
+
+/* 「最後に服薬してから」: 薬名と錠数は白の太字、次の服薬までの時間は控えめに */
+.med-status-drug {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.med-status-next {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text);
+}
