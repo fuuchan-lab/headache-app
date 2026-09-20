@@ -41,7 +41,19 @@ export function MedStatus({ records, medicines }: { records: AppRecord[]; medici
       <p className="med-status-time">{formatElapsed(now - last.ts, t)}</p>
       {remaining !== null && (
         <p className="med-status-next" title={t('last.nextNote')}>
-          {remaining === 0 ? t('last.nextOk') : t('last.nextIn', { time: formatElapsed(remaining, t) })}
+          {remaining === 0 ? (
+            <strong>{t('last.nextOk')}</strong>
+          ) : (
+            <>
+              {/* 「…可能になるまで」で改行し、2行目は「あと 5時間57分」（時間は太字） */}
+              {t('last.nextHead')}
+              <br />
+              <span className="nowrap">
+                {t('last.nextPrefix')}
+                <strong>{formatElapsed(remaining, t)}</strong>
+              </span>
+            </>
+          )}
         </p>
       )}
     </div>

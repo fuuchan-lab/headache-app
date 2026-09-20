@@ -82,7 +82,8 @@ export const ja = {
   // 服薬の経過
   'last.drugSuffix': 'を',
   'last.since': '最後に服薬してから',
-  'last.nextIn': '次の服薬が可能になるまであと{time}',
+  'last.nextHead': '次の服薬が可能になるまで',
+  'last.nextPrefix': 'あと ',
   'last.nextOk': '次の服薬が可能です',
   'last.nextNote': '設定した服薬間隔をもとにした目安です。服薬は、医師・薬剤師の指示に従ってください。',
   'last.none': '直近に服薬情報がありません。',
@@ -284,7 +285,8 @@ export const en: Record<MessageKey, string> = {
 
   'last.drugSuffix': '',
   'last.since': 'Time since last dose',
-  'last.nextIn': 'Next dose possible in {time}',
+  'last.nextHead': 'Next dose possible in',
+  'last.nextPrefix': '',
   'last.nextOk': 'Next dose is possible now',
   'last.nextNote': 'This is a guide based on the dosing interval you set. Follow the instructions of your doctor or pharmacist.',
   'last.none': 'No recent medication records.',

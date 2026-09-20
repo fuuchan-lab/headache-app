@@ -953,7 +953,7 @@ textarea.sticky::placeholder {
 /* 気圧カードの下段: 左に「最後に薬を飲んでから」、右に気圧の変化のお知らせと「アドバイス」ボタン */
 .pressure-bottom {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 10px;
   align-items: stretch;
 }
@@ -967,7 +967,7 @@ textarea.sticky::placeholder {
   flex-direction: column;
   justify-content: center;
   gap: 2px;
-  padding: 10px 12px;
+  padding: 10px 9px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--bg);
@@ -1015,7 +1015,7 @@ textarea.sticky::placeholder {
 }
 
 /* 幅がとても狭いスマホでは、左右に並べず上下に並べる */
-@media (max-width: 359px) {
+@media (max-width: 389px) {
   .pressure-bottom {
     grid-template-columns: 1fr;
   }
@@ -1066,7 +1066,57 @@ textarea.sticky::placeholder {
 
 .med-status-next {
   margin: 2px 0 0;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   line-height: 1.4;
+  /* 「次の服薬が可能になるまで／あと」は、「最後に服薬してから」と同じ文字色。時間だけ太字で目立たせる */
+  color: var(--muted);
+}
+
+.med-status-next strong {
   color: var(--text);
+}
+
+/* 気圧の推移グラフの「今」の丸は、ゆっくり点滅させて、いまの位置が分かるようにする */
+@keyframes spark-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.spark-dot-now {
+  animation: spark-blink 2.4s ease-in-out infinite;
+}
+
+/* 動きを減らす設定の端末では、点滅させない */
+@media (prefers-reduced-motion: reduce) {
+  .spark-dot-now {
+    animation: none;
+  }
+}
+
+/* 気圧が下がる時のお知らせ（気圧カードの中だけ）は、ゆっくり点滅させて気づきやすくする。文字が読めるよう、薄くなりすぎないようにする */
+@keyframes banner-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pressure-advice .banner-caution,
+.pressure-advice .banner-warning {
+  animation: banner-blink 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressure-advice .banner-caution,
+  .pressure-advice .banner-warning {
+    animation: none;
+  }
 }
