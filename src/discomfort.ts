@@ -19,25 +19,39 @@ export function discomfortCategory(di: number): DiCategory {
 }
 
 /**
- * 不快さを 0（快適）〜1（不快）にする。
- * 60〜65 は「何も感じない」快適な範囲。暑い側は 85 で最大、寒い側は 48 で最大とする。
+ * 色の基準点: [不快指数, 色相, 彩度%, 明度%]（各区分の真ん中の値に置く）。
+ * 一般的な不快指数の色分け（青 → 水色 → ミント → 緑 → 黄緑 → 黄 → オレンジ → 赤）に沿っている。
+ * 白い文字が読めるよう、どの色も明度を低く（濃く）してある。
  */
-export function discomfortScale(di: number): number {
-  if (di >= 65) return Math.min(1, (di - 65) / 20)
-  if (di < 60) return Math.min(1, (60 - di) / 12)
-  return 0
-}
+const STOPS: readonly (readonly [number, number, number, number])[] = [
+  [50, 212, 85, 38], // 寒い: 青
+  [57.5, 200, 85, 32], // 肌寒い: 水色
+  [62.5, 165, 80, 25], // 何も感じない: ミント（青緑）
+  [67.5, 125, 60, 27], // 快い: 緑
+  [72.5, 75, 65, 25], // 暑くない: 黄緑
+  [77.5, 45, 90, 25], // やや暑い: 黄（明るく見えやすいので特に濃く）
+  [82.5, 25, 90, 33], // 暑くて汗が出る: オレンジ
+  [87.5, -4, 78, 34], // 暑くてたまらない: 赤（色相 356°）
+]
 
-// 色の3点（HSL）。快適 = 濃い青、普通 = 濃い紫、不快 = 濃い赤。白い文字が読める濃さにしている
-const BLUE = [222, 72, 30] as const
-const PURPLE = [272, 58, 32] as const
-const RED = [356, 74, 32] as const
-
-const mix = (a: readonly number[], b: readonly number[], k: number) => a.map((v, i) => v + (b[i] - v) * k)
-
-/** 不快指数に応じた背景色 (CSS の hsl 値)。青 → 紫 → 赤へなめらかに変わる */
+/** 不快指数に応じた背景色 (CSS の hsl 値)。基準点の間はなめらかに変わる */
 export function discomfortColor(di: number): string {
-  const s = discomfortScale(di)
-  const [h, sat, light] = s <= 0.5 ? mix(BLUE, PURPLE, s / 0.5) : mix(PURPLE, RED, (s - 0.5) / 0.5)
-  return `hsl(${h.toFixed(0)} ${sat.toFixed(0)}% ${light.toFixed(0)}%)`
+  const first = STOPS[0]
+  const last = STOPS[STOPS.length - 1]
+  let h: number, s: number, l: number
+  if (di <= first[0]) {
+    ;[, h, s, l] = first
+  } else if (di >= last[0]) {
+    ;[, h, s, l] = last
+  } else {
+    const i = STOPS.findIndex((stop, idx) => di >= stop[0] && di < STOPS[idx + 1][0])
+    const [d0, h0, s0, l0] = STOPS[i]
+    const [d1, h1, s1, l1] = STOPS[i + 1]
+    const k = (di - d0) / (d1 - d0)
+    h = h0 + (h1 - h0) * k
+    s = s0 + (s1 - s0) * k
+    l = l0 + (l1 - l0) * k
+  }
+  const hue = ((h % 360) + 360) % 360
+  return `hsl(${hue.toFixed(0)} ${s.toFixed(0)}% ${l.toFixed(0)}%)`
 }
