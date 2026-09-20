@@ -80,8 +80,9 @@ export const ja = {
   'w.unknown': '—',
 
   // 服薬の経過
-  'last.title': '最後に薬を飲んでから',
-  'last.none': '服薬の記録はまだありません。',
+  'last.drug': '{drug}を',
+  'last.since': '最後に服薬してから',
+  'last.none': '直近に服薬情報がありません。',
   'elapsed.hm': '{h}時間{m}分',
   'elapsed.m': '{m}分',
 
@@ -272,8 +273,9 @@ export const en: Record<MessageKey, string> = {
   'w.thunder': 'Thunderstorm',
   'w.unknown': '—',
 
-  'last.title': 'Time since last dose',
-  'last.none': 'No doses recorded yet.',
+  'last.drug': '{drug}',
+  'last.since': 'Time since last dose',
+  'last.none': 'No recent medication records.',
   'elapsed.hm': '{h} h {m} min',
   'elapsed.m': '{m} min',
 

@@ -1011,3 +1011,11 @@ textarea.sticky::placeholder {
 .nowrap {
   white-space: nowrap;
 }
+
+/* 服薬の記録がない時のメッセージ */
+.med-status-empty {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
