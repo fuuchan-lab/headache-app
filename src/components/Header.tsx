@@ -66,6 +66,14 @@ export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Pr
           onClick={auth.dismissNotice}
         >
           {t(auth.notice.key, auth.notice.vars)}
+          {auth.notice.detail && (
+            <>
+              <br />
+              <span className="small">
+                {t('err.detail')}: {auth.notice.detail}
+              </span>
+            </>
+          )}
         </p>
       )}
 
@@ -133,6 +141,11 @@ function AccountModal({ account, sync, unsyncedCount, onClose, onSwitch, onSignO
         <p className={sync.status === 'error' ? 'error' : 'muted'} role="status">
           {syncText(sync, unsyncedCount, t, LOCALES[lang])}
         </p>
+        {sync.status === 'error' && sync.error && (
+          <p className="muted small">
+            {t('err.detail')}: {sync.error}
+          </p>
+        )}
         <button className="secondary" disabled={sync.status === 'syncing'} onClick={() => void sync.syncNow()}>
           {t('account.syncNow')}
         </button>

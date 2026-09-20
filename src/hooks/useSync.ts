@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { describeError } from '../errors.ts'
 import { syncNow } from '../sync.ts'
 
 export type SyncStatus = 'idle' | 'syncing' | 'ok' | 'error'
@@ -23,6 +24,8 @@ export function useSync(
 ) {
   const [status, setStatus] = useState<SyncStatus>('idle')
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null)
+  /** 直近の同期が失敗した時の、原因の詳細 */
+  const [error, setError] = useState<string | null>(null)
   const lastRunRef = useRef(0)
 
   const run = useCallback(async () => {
@@ -33,8 +36,11 @@ export function useSync(
       if (result.changedLocal) await reload()
       onSynced()
       setLastSyncAt(Date.now())
+      setError(null)
       setStatus('ok')
-    } catch {
+    } catch (e) {
+      console.error('[sync]', e)
+      setError(describeError(e))
       setStatus('error')
     }
   }, [reload, onSynced])
@@ -70,7 +76,7 @@ export function useSync(
     }
   }, [loggedIn, run])
 
-  return { status: loggedIn ? status : 'idle', lastSyncAt, syncNow: run }
+  return { status: loggedIn ? status : 'idle', lastSyncAt, error, syncNow: run }
 }
 
 export type SyncState = ReturnType<typeof useSync>

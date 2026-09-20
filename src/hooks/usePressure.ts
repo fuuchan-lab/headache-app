@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { describeError } from '../errors.ts'
 import { getPosition, type Position } from '../geo.ts'
 import { fetchPressure, type PressureForecast } from '../weather.ts'
 
@@ -6,14 +7,6 @@ import { fetchPressure, type PressureForecast } from '../weather.ts'
 export interface PressureError {
   kind: 'location' | 'pressure'
   detail: string
-}
-
-function describeError(e: unknown): string {
-  if (typeof e === 'object' && e !== null && 'code' in e && 'message' in e) {
-    // GeolocationPositionError など
-    return `${(e as { code: unknown }).code}: ${String((e as { message: unknown }).message)}`
-  }
-  return e instanceof Error ? `${e.name}: ${e.message}` : String(e)
 }
 
 export interface PressureState {

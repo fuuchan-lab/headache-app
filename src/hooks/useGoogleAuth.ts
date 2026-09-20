@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { describeError } from '../errors.ts'
 import type { Vars } from '../i18n/context.ts'
 import type { MessageKey } from '../i18n/messages.ts'
 import { clearSyncIndex } from '../sync.ts'
@@ -27,6 +28,8 @@ export interface Notice {
   kind: 'ok' | 'error'
   key: MessageKey
   vars?: Vars
+  /** 原因の切り分け用の詳細（スマホなど、開発者ツールを使えない環境で分かるように画面に出す） */
+  detail?: string
 }
 
 // 開発時の StrictMode で復元処理が2回走らないようにする
@@ -68,7 +71,8 @@ export function useGoogleAuth() {
         clearToken()
         const cancelled = e instanceof Error && e.message === 'popup_closed'
         if (!restoring && !cancelled) {
-          say({ kind: 'error', key: 'notice.loginFailed' })
+          console.error('[login]', e)
+          say({ kind: 'error', key: 'notice.loginFailed', detail: describeError(e) })
         }
         return false
       } finally {
