@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import type { PressureState } from '../hooks/usePressure.ts'
 import { usePlaceName } from '../hooks/usePlaceName.ts'
 import { discomfortCategory, discomfortColor, discomfortIndex } from '../discomfort.ts'
 import { useI18n } from '../i18n/useI18n.ts'
 import { assessTrend } from '../warning.ts'
 import { describeWeather } from '../weather.ts'
+import { AdvicePopup } from './AdvicePopup.tsx'
 import { PressureSparkline } from './PressureSparkline.tsx'
 
 interface Props {
@@ -12,6 +14,7 @@ interface Props {
 
 export function PressureCard({ pressure }: Props) {
   const { t, lang } = useI18n()
+  const [adviceOpen, setAdviceOpen] = useState(false)
   const { status, forecast, error, staleLocation, fetchedAt, refresh, position } = pressure
   // 気圧を取得している位置の市区町村名（取得できなければ付けない）
   const place = usePlaceName(position, lang)
@@ -62,12 +65,23 @@ export function PressureCard({ pressure }: Props) {
       )}
 
       {trend && (
-        <p className={`banner banner-${trend.level}`} role={trend.level === 'none' ? undefined : 'alert'}>
+        <p
+          className={`banner banner-${trend.level}`}
+          role={trend.level === 'warning' || trend.level === 'caution' ? 'alert' : undefined}
+        >
           {trend.level === 'warning' && '⚠️ '}
           {trend.level === 'caution' && '⚠ '}
+          {trend.level === 'info' && '📈 '}
           {trend.message}
         </p>
       )}
+      {/* 気圧の下降・上昇に応じたアドバイス。予報が取れている時だけ出す */}
+      {trend && (
+        <button className="secondary" onClick={() => setAdviceOpen(true)}>
+          💡 {t('advice.button')}
+        </button>
+      )}
+      {adviceOpen && trend && <AdvicePopup direction={trend.direction} onClose={() => setAdviceOpen(false)} />}
       {staleLocation && <p className="muted">{t('pressure.staleLocation')}</p>}
       {error && (
         <>

@@ -13,6 +13,8 @@
   --warning-text: #991b1b;
   --ok-bg: #dcfce7;
   --ok-text: #166534;
+  --info-bg: #dbeafe;
+  --info-text: #1e3a8a;
   --gear-light: #a7f3ea;
   --gear-mid: #14b8a6;
   --gear-dark: #0b5c55;
@@ -38,6 +40,8 @@
     --warning-text: #fecaca;
     --ok-bg: #052e16;
     --ok-text: #bbf7d0;
+    --info-bg: #172554;
+    --info-text: #bfdbfe;
     --gear-light: #d5fff9;
     --gear-mid: #2dd4bf;
     --gear-dark: #0f766e;
@@ -299,6 +303,10 @@ button.link:disabled {
 .chart {
   width: 100%;
   min-width: 0;
+  /* 縦のスクロールはページに任せ、横のドラッグとピンチはグラフで処理する */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .history {
@@ -834,4 +842,96 @@ textarea.sticky::placeholder {
 /* 見出しが長くて折り返した時も、右側のボタン（更新など）は右寄せのまま */
 .row > .link {
   margin-left: auto;
+}
+
+/* グラフの拡大・縮小ボタン */
+.zoom {
+  display: flex;
+  gap: 6px;
+}
+
+.zoom button {
+  min-width: 44px;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.zoom button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* 表示範囲のボタン（全体・1日・3日…）は、狭い画面で折り返せるように */
+.seg {
+  flex-wrap: wrap;
+  align-self: flex-start;
+}
+
+/* 薬の色の選択 */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.swatch-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid var(--card);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.swatch-btn[aria-checked='true'] {
+  box-shadow: 0 0 0 3px var(--text);
+}
+
+/* 気圧が上がりつつある時のお知らせ */
+.banner-info {
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+/* アドバイスのポップアップ。長いので、画面より高くなったらポップアップの中でスクロールする */
+.modal-card {
+  max-height: 88vh;
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+
+.advice-section h3 {
+  margin: 4px 0 6px;
+  font-size: 1rem;
+}
+
+.advice-section p {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+}
+
+.advice-section ul {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+/* ポップアップの中の要素は、内容が長くなっても縮めない（縮むとタブなどが潰れて見えなくなる） */
+.modal-card > * {
+  flex-shrink: 0;
+}
+
+/* 記録するカード（今の頭痛・服薬）の見出しは、他のカードより大きく */
+.form-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.3;
 }

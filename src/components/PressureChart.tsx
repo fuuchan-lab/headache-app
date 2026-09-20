@@ -10,17 +10,32 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import {
+  DAY,
+  HOUR,
+  MIN_SPAN,
+  autoWindow,
+  chooseTicks,
+  clampWindow,
+  coversAll,
+  zoomWindow,
+  type TimeWindow,
+} from '../chartView.ts'
 import { recordTitle } from '../format.ts'
+import { useChartGestures } from '../hooks/useChartGestures.ts'
 import { LOCALES } from '../i18n/context.ts'
 import { useI18n } from '../i18n/useI18n.ts'
+import { localizeMedicineName } from '../medicineNames.ts'
 import { colorFor, type Medicine } from '../settings.ts'
 import { LEVEL_COLORS, type AppRecord, type HeadacheLevel } from '../types.ts'
 import { PillIcon } from './PillIcon.tsx'
 import { RecordPopup } from './RecordPopup.tsx'
 import { StickyIcon } from './StickyIcon.tsx'
 
-const DAY = 86_400_000
-const RANGES = [1, 3, 7, 30]
+/** 表示範囲のプリセット（時間）。「全体」は記録全体に自動で合わせる */
+const PRESET_HOURS = [6, 24, 72, 168, 720]
+/** ＋/－ボタン1回の拡大・縮小の倍率 */
+const ZOOM_STEP = 2
 const ICON_SIZE = 20
 /** 錠剤アイコンを重ねる時の横のずらし幅 (px) */
 const PILL_OVERLAP = 8
@@ -55,19 +70,6 @@ interface NoteMark {
   title: string
 }
 
-/** 複数日表示の横軸の目盛り。日付が重複しないよう、0時の位置に置く（長い期間は間引く） */
-function dayTicks(from: number, to: number, days: number): number[] {
-  const step = days <= 7 ? 1 : Math.ceil(days / 6)
-  const ticks: number[] = []
-  const d = new Date(from)
-  d.setHours(24, 0, 0, 0)
-  while (d.getTime() <= to) {
-    ticks.push(d.getTime())
-    d.setDate(d.getDate() + step)
-  }
-  return ticks
-}
-
 /** 錠数を、まるごとのアイコン数と半分のアイコン有無にする（重ねるのは最大6つ） */
 function pillCounts(tablets: number): { whole: number; half: boolean } {
   const half = tablets - Math.floor(tablets) >= 0.5
@@ -96,37 +98,54 @@ function LevelDot({ cx, cy, payload, onOpen, label }: LevelDotProps) {
   )
 }
 
+/** 表示中: null は「全体」（記録の量に合わせて自動）、それ以外は拡大・移動した範囲 */
+type View = { window: TimeWindow; hours: number | null } | null
+
 export function PressureChart({ records, medicines }: { records: AppRecord[]; medicines: Medicine[] }) {
   const { t, lang } = useI18n()
-  const [days, setDays] = useState(3)
+  const [view, setView] = useState<View>(null)
   const [openId, setOpenId] = useState<string | null>(null)
-  // 表示範囲は「最新の記録」を基準にして、描画中に現在時刻を読まない
-  const latest = records[0]?.ts ?? 0
-  const from = latest - days * DAY
+
+  // 記録の時刻すべてが収まる範囲。記録が増えれば、この範囲も自動で広がる
+  const auto = useMemo(
+    () => autoWindow(records.filter((r) => r.type !== 'pressure' || r.pressure !== null).map((r) => r.ts)),
+    [records],
+  )
+  const win = view ? clampWindow(view.window, auto) : auto
+  const spanMs = win.to - win.from
+
+  const applyWindow = (w: TimeWindow, hours: number | null = null) =>
+    setView(coversAll(w, auto) ? null : { window: w, hours })
+  const zoomBy = (factor: number) => applyWindow(zoomWindow(win, factor, 0.5, auto))
+
+  const { setContainer, handlers } = useChartGestures({ window: win, limits: auto, onChange: (w) => applyWindow(w) })
 
   const { points, meds, notes, pressureDomain } = useMemo(() => {
-    const inRange = records.filter((r) => r.ts >= from).sort((a, b) => a.ts - b.ts)
-    const points: Point[] = inRange.flatMap((r): Point[] => {
+    // 端の線が途切れないよう、範囲の外側も半分の幅だけ含める
+    const margin = (win.to - win.from) / 2
+    const near = records.filter((r) => r.ts >= win.from - margin && r.ts <= win.to + margin).sort((a, b) => a.ts - b.ts)
+    const visible = near.filter((r) => r.ts >= win.from && r.ts <= win.to)
+    const points: Point[] = near.flatMap((r): Point[] => {
       if (r.type === 'headache') return [{ t: r.ts, id: r.id, level: r.level, pressure: r.pressure ?? undefined }]
       if (r.type === 'pressure' && r.pressure !== null) return [{ t: r.ts, pressure: r.pressure }]
       return []
     })
-    const meds: MedMark[] = inRange.flatMap((r): MedMark[] =>
+    const meds: MedMark[] = visible.flatMap((r): MedMark[] =>
       r.type === 'medication'
         ? [{ id: r.id, t: r.ts, name: r.name, color: colorFor(medicines, r.name), ...pillCounts(r.tablets ?? 1) }]
         : [],
     )
     // メモのある記録には付箋マークを付ける
-    const notes: NoteMark[] = inRange.flatMap((r): NoteMark[] =>
-      r.type !== 'pressure' && r.note ? [{ id: r.id, t: r.ts, title: recordTitle(r, t) }] : [],
+    const notes: NoteMark[] = visible.flatMap((r): NoteMark[] =>
+      r.type !== 'pressure' && r.note ? [{ id: r.id, t: r.ts, title: recordTitle(r, t, lang) }] : [],
     )
-    // アイコンを軸の位置に置くため、気圧軸の範囲は自分で計算する
-    const values = points.flatMap((p) => (p.pressure === undefined ? [] : [p.pressure]))
-    const pressureDomain: [number, number] = values.length
-      ? [Math.floor(Math.min(...values)) - 2, Math.ceil(Math.max(...values)) + 2]
+    // アイコンを軸の位置に置くため、気圧軸の範囲は自分で計算する（見えている範囲の気圧に合わせる）
+    const inView = (visible.length > 0 ? visible : near).flatMap((r) => (r.pressure !== null ? [r.pressure] : []))
+    const pressureDomain: [number, number] = inView.length
+      ? [Math.floor(Math.min(...inView)) - 2, Math.ceil(Math.max(...inView)) + 2]
       : [990, 1030]
     return { points, meds, notes, pressureDomain }
-  }, [records, medicines, from, t])
+  }, [records, medicines, win.from, win.to, t, lang])
 
   const usedMeds = useMemo(() => {
     const seen = new Map<string, string>()
@@ -135,8 +154,9 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
   }, [meds])
 
   const opened = openId ? records.find((r) => r.id === openId) : undefined
+  const ticks = useMemo(() => chooseTicks(win), [win])
 
-  if (points.length < 2) {
+  if (records.filter((r) => r.type === 'headache' || r.pressure !== null).length < 2) {
     return (
       <section className="card">
         <h2>{t('chart.title')}</h2>
@@ -150,22 +170,44 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
   const axisY = pressureDomain[0] + 0.01
   const titleOf = (id: string) => {
     const r = records.find((x) => x.id === id)
-    return r && r.type !== 'pressure' ? recordTitle(r, t) : ''
+    return r && r.type !== 'pressure' ? recordTitle(r, t, lang) : ''
+  }
+  const tickLabel = (v: number) => {
+    const d = new Date(v)
+    const date = `${d.getMonth() + 1}/${d.getDate()}`
+    if (ticks.unit === 'hour') return d.getHours() === 0 ? date : t('chart.hour', { h: d.getHours() })
+    // 1年近く以上の長い期間は、年も付ける
+    return spanMs > 300 * DAY ? `${String(d.getFullYear()).slice(2)}/${date}` : date
   }
 
   return (
     <section className="card">
       <div className="row">
         <h2>{t('chart.title')}</h2>
-        <div className="seg">
-          {RANGES.map((d) => (
-            <button key={d} className={days === d ? 'on' : ''} onClick={() => setDays(d)}>
-              {t('chart.days', { n: d })}
-            </button>
-          ))}
+        <div className="zoom">
+          <button aria-label={t('chart.zoomOut')} title={t('chart.zoomOut')} disabled={view === null} onClick={() => zoomBy(1 / ZOOM_STEP)}>
+            －
+          </button>
+          <button aria-label={t('chart.zoomIn')} title={t('chart.zoomIn')} disabled={spanMs <= MIN_SPAN} onClick={() => zoomBy(ZOOM_STEP)}>
+            ＋
+          </button>
         </div>
       </div>
-      <div className="chart">
+      <div className="seg">
+        <button className={view === null ? 'on' : ''} onClick={() => setView(null)}>
+          {t('chart.all')}
+        </button>
+        {PRESET_HOURS.map((h) => (
+          <button
+            key={h}
+            className={view?.hours === h ? 'on' : ''}
+            onClick={() => applyWindow({ from: auto.to - h * HOUR, to: auto.to }, h)}
+          >
+            {h < 24 ? t('chart.hours', { n: h }) : t('chart.days', { n: h / 24 })}
+          </button>
+        ))}
+      </div>
+      <div className="chart" ref={setContainer} {...handlers}>
         <ResponsiveContainer width="100%" height={290}>
           <ComposedChart data={points} margin={{ top: 8, right: 0, bottom: 0, left: -12 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -173,12 +215,10 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
               dataKey="t"
               type="number"
               scale="time"
-              domain={[from, latest]}
-              ticks={days > 1 ? dayTicks(from, latest, days) : undefined}
-              tickFormatter={(v: number) => {
-                const d = new Date(v)
-                return days <= 1 ? t('chart.hour', { h: d.getHours() }) : `${d.getMonth() + 1}/${d.getDate()}`
-              }}
+              domain={[win.from, win.to]}
+              allowDataOverflow
+              ticks={ticks.values}
+              tickFormatter={tickLabel}
               tick={{ fontSize: 11 }}
               // 軸の線と目盛りの文字の間に、付箋アイコンを置く余白をつくる
               height={50}
@@ -200,7 +240,16 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
             {meds.map((m) => (
               <ReferenceLine key={m.id} yAxisId="p" x={m.t} stroke={m.color} strokeDasharray="4 3" strokeOpacity={0.7} />
             ))}
-            <Line yAxisId="p" dataKey="pressure" name={pressureName} stroke="#0f766e" strokeWidth={2} dot={false} connectNulls />
+            <Line
+              yAxisId="p"
+              dataKey="pressure"
+              name={pressureName}
+              stroke="#0f766e"
+              strokeWidth={2}
+              dot={false}
+              connectNulls
+              isAnimationActive={false}
+            />
             <Line
               yAxisId="l"
               dataKey="level"
@@ -284,6 +333,7 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+      <p className="muted small">{t('chart.zoomHint')}</p>
       <ul className="legend">
         <li>
           <span className="swatch" style={{ background: '#0f766e' }} />
@@ -296,7 +346,7 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
         {usedMeds.map(([name, color]) => (
           <li key={name}>
             <PillIcon color={color} size={16} />
-            {name}
+            {localizeMedicineName(name, lang)}
           </li>
         ))}
         {notes.length > 0 && (

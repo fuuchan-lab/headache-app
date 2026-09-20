@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useI18n } from '../i18n/useI18n.ts'
 import { shrinkImage } from '../image.ts'
+import { canonicalMedicineName } from '../medicineNames.ts'
 import type { Medicine } from '../settings.ts'
 import { MedicineFields } from './MedicineFields.tsx'
 import { StickyNoteField } from './StickyNoteField.tsx'
@@ -45,7 +46,7 @@ export function MedicationForm({ medicines, onSave }: Props) {
 
   const submit = async () => {
     if (!name.trim()) return
-    await onSave(name.trim(), tablets, note.trim(), photo)
+    await onSave(canonicalMedicineName(name), tablets, note.trim(), photo)
     setNote('')
     clearPhoto()
     setSaved(true)
@@ -54,7 +55,7 @@ export function MedicationForm({ medicines, onSave }: Props) {
 
   return (
     <section className="card">
-      <h2>{t('meds.title')}</h2>
+      <h2 className="form-title">{t('meds.title')}</h2>
       <MedicineFields
         medicines={medicines}
         name={name}

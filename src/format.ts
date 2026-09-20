@@ -1,4 +1,5 @@
 import { LOCALES, type Lang, type TFn } from './i18n/context.ts'
+import { localizeMedicineName } from './medicineNames.ts'
 import type { HeadacheRecord, MedicationRecord } from './types.ts'
 
 export function formatElapsed(ms: number, t: TFn): string {
@@ -37,7 +38,8 @@ export function formatDateTime(ts: number, lang: Lang): string {
 }
 
 /** 記録の見出し。頭痛なら「頭痛 3（痛い）」、服薬なら「ロキソニン 1錠」 */
-export function recordTitle(r: HeadacheRecord | MedicationRecord, t: TFn): string {
+export function recordTitle(r: HeadacheRecord | MedicationRecord, t: TFn, lang: Lang): string {
   if (r.type === 'headache') return t('history.headache', { level: r.level, label: t(`level.${r.level}`) })
-  return r.tablets === undefined ? r.name : `${r.name} ${tabletsLabel(r.tablets, t)}`
+  const name = localizeMedicineName(r.name, lang)
+  return r.tablets === undefined ? name : `${name} ${tabletsLabel(r.tablets, t)}`
 }

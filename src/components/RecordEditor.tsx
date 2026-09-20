@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { fromLocalInput, toLocalInput } from '../format.ts'
 import { useI18n } from '../i18n/useI18n.ts'
+import { canonicalMedicineName } from '../medicineNames.ts'
 import type { Medicine } from '../settings.ts'
 import type { AppRecord, HeadacheRecord, MedicationRecord } from '../types.ts'
 import { LevelSlider } from './LevelSlider.tsx'
@@ -32,7 +33,7 @@ export function RecordEditor({ record, medicines, onSave, onCancel }: Props) {
     await onSave(
       record.type === 'headache'
         ? { ...record, ...common, level }
-        : { ...record, ...common, name: name.trim(), tablets },
+        : { ...record, ...common, name: canonicalMedicineName(name), tablets },
     )
   }
 

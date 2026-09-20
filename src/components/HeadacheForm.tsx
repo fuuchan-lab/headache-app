@@ -36,7 +36,7 @@ export function HeadacheForm({ pressure, onSave }: Props) {
 
   return (
     <section className="card">
-      <h2>{t('headache.title')}</h2>
+      <h2 className="form-title">{t('headache.title')}</h2>
       <LevelSlider value={level} onChange={pick} untouched={selectedAt === null} />
       {selectedAt !== null && (
         <p className="muted">{t('headache.selected', { time: formatDateTime(selectedAt, lang) })}</p>

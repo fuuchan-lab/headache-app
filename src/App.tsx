@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Header } from './components/Header.tsx'
 import { HeadacheForm } from './components/HeadacheForm.tsx'
+import type { EditResult } from './components/MedicineEditor.tsx'
 import { HistoryList } from './components/HistoryList.tsx'
 import { MedicationForm } from './components/MedicationForm.tsx'
 import { MedStatus } from './components/MedStatus.tsx'
@@ -15,14 +16,23 @@ import { useSync } from './hooks/useSync.ts'
 
 export default function App() {
   const [view, setView] = useState<'home' | 'settings'>('home')
-  const { records, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, remove } = useRecords()
+  const { records, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, renameMedication, remove } =
+    useRecords()
   const auth = useGoogleAuth()
   const sync = useSync(auth.account !== null, unsyncedCount, reload)
-  const { medicines, add: addMedicine, remove: removeMedicine } = useMedicines()
+  const { medicines, add: addMedicine, update: updateMedicineSetting, remove: removeMedicine } = useMedicines()
 
   const pressure = usePressure((forecast, pos) => {
     void logPressure({ pressure: forecast.current, lat: pos.lat, lon: pos.lon })
   })
+
+  /** 薬の名前・色を変える。名前を変えた時は、過去の記録の薬名も新しい名前にそろえる */
+  const editMedicine = async (id: string, name: string, color: string): Promise<EditResult> => {
+    const result = updateMedicineSetting(id, name, color)
+    if (!result.ok) return result.reason === 'duplicate' ? 'duplicate' : 'empty'
+    if (result.oldName !== result.newName) await renameMedication(result.oldName, result.newName)
+    return 'ok'
+  }
 
   const snapshot = (): Snapshot => ({
     pressure: pressure.forecast?.current ?? null,
@@ -44,6 +54,7 @@ export default function App() {
         <SettingsPage
           medicines={medicines}
           onAdd={addMedicine}
+          onEdit={editMedicine}
           onRemove={removeMedicine}
           records={records}
           loggedIn={auth.account !== null}

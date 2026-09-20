@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatDateTime, tabletsLabel } from '../format.ts'
 import { useI18n } from '../i18n/useI18n.ts'
+import { localizeMedicineName } from '../medicineNames.ts'
 import { colorFor, type Medicine } from '../settings.ts'
 import { LEVEL_COLORS, type AppRecord, type HeadacheRecord, type MedicationRecord } from '../types.ts'
 import { PillIcon } from './PillIcon.tsx'
@@ -66,7 +67,7 @@ export function HistoryList({ records, medicines, onUpdate, onRemove }: Props) {
             ) : (
               <>
                 <p>
-                  <PillIcon color={colorFor(medicines, r.name)} size={16} /> {r.name}
+                  <PillIcon color={colorFor(medicines, r.name)} size={16} /> {localizeMedicineName(r.name, lang)}
                   {r.tablets !== undefined && <span> {tabletsLabel(r.tablets, t)}</span>}
                   {r.pressure !== null && <span className="muted">　{r.pressure.toFixed(1)} hPa</span>}
                 </p>

@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { driveConfig } from '../drive.ts'
 import type { Lang } from '../i18n/context.ts'
 import { useI18n } from '../i18n/useI18n.ts'
+import { localizeMedicineName } from '../medicineNames.ts'
 import type { Medicine } from '../settings.ts'
 import type { AppRecord } from '../types.ts'
+import { MedicineEditor, type EditResult } from './MedicineEditor.tsx'
 import { PillIcon } from './PillIcon.tsx'
 
 interface Props {
   medicines: Medicine[]
   onAdd: (name: string) => boolean
+  /** 名前・色を変える。名前を変えた時は、過去の記録の薬名も直す */
+  onEdit: (id: string, name: string, color: string) => Promise<EditResult>
   onRemove: (id: string) => void
   /** 書き出す記録（削除済みを除く） */
   records: AppRecord[]
@@ -22,10 +26,11 @@ type ExportState =
   | { status: 'done'; name: string; id: string }
   | { status: 'error' }
 
-export function SettingsPage({ medicines, onAdd, onRemove, records, loggedIn }: Props) {
+export function SettingsPage({ medicines, onAdd, onEdit, onRemove, records, loggedIn }: Props) {
   const { t, lang, setLang } = useI18n()
   const [name, setName] = useState('')
   const [error, setError] = useState<'empty' | 'duplicate' | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [exp, setExp] = useState<ExportState>({ status: 'idle' })
 
   const submit = () => {
@@ -42,7 +47,7 @@ export function SettingsPage({ medicines, onAdd, onRemove, records, loggedIn }: 
     try {
       // Excel 出力のライブラリは、使う時だけ読み込む
       const { exportToDrive } = await import('../exportExcel.ts')
-      const result = await exportToDrive(records, t)
+      const result = await exportToDrive(records, t, lang)
       setExp({ status: 'done', ...result })
     } catch (e) {
       console.error('[export]', e)
@@ -73,22 +78,42 @@ export function SettingsPage({ medicines, onAdd, onRemove, records, loggedIn }: 
         <h2>{t('settings.meds')}</h2>
         <p className="muted">{t('settings.medsHelp')}</p>
         <ul className="history">
-          {medicines.map((m) => (
-            <li key={m.id} className="row">
-              <span className="med-name">
-                <PillIcon color={m.color} size={22} />
-                {m.name}
-              </span>
-              <button
-                className="link danger"
-                onClick={() => {
-                  if (confirm(t('settings.confirmRemove', { name: m.name }))) onRemove(m.id)
-                }}
-              >
-                {t('history.delete')}
-              </button>
-            </li>
-          ))}
+          {medicines.map((m) => {
+            const shown = localizeMedicineName(m.name, lang)
+            if (editingId === m.id) {
+              return (
+                <li key={m.id}>
+                  <MedicineEditor
+                    medicine={m}
+                    affectedCount={records.filter((r) => r.type === 'medication' && r.name === m.name).length}
+                    onSave={(newName, color) => onEdit(m.id, newName, color)}
+                    onCancel={() => setEditingId(null)}
+                  />
+                </li>
+              )
+            }
+            return (
+              <li key={m.id} className="row">
+                <span className="med-name">
+                  <PillIcon color={m.color} size={22} />
+                  {shown}
+                </span>
+                <span>
+                  <button className="link" onClick={() => setEditingId(m.id)}>
+                    {t('history.edit')}
+                  </button>
+                  <button
+                    className="link danger"
+                    onClick={() => {
+                      if (confirm(t('settings.confirmRemove', { name: shown }))) onRemove(m.id)
+                    }}
+                  >
+                    {t('history.delete')}
+                  </button>
+                </span>
+              </li>
+            )
+          })}
           {medicines.length === 0 && <li className="muted">{t('settings.none')}</li>}
         </ul>
         <div className="two">

@@ -1,10 +1,17 @@
 import { useCallback, useState } from 'react'
-import { loadMedicines, nextColor, saveMedicines, type Medicine } from '../settings.ts'
+import {
+  addMedicine,
+  loadMedicines,
+  saveMedicines,
+  updateMedicine,
+  type Medicine,
+  type UpdateResult,
+} from '../settings.ts'
 
 export function useMedicines() {
   const [medicines, setMedicines] = useState<Medicine[]>(loadMedicines)
 
-  const update = useCallback((next: Medicine[]) => {
+  const persist = useCallback((next: Medicine[]) => {
     setMedicines(next)
     saveMedicines(next)
   }, [])
@@ -12,18 +19,27 @@ export function useMedicines() {
   /** 追加できたら true。空欄・重複は false */
   const add = useCallback(
     (rawName: string): boolean => {
-      const name = rawName.trim()
-      if (!name || medicines.some((m) => m.name === name)) return false
-      update([...medicines, { id: crypto.randomUUID(), name, color: nextColor(medicines) }])
-      return true
+      const result = addMedicine(medicines, rawName, crypto.randomUUID())
+      if (result.ok) persist(result.medicines)
+      return result.ok
     },
-    [medicines, update],
+    [medicines, persist],
+  )
+
+  /** 名前と色を変える。名前を変えた時は、過去の記録の薬名も直せるよう、変更前後の名前を返す */
+  const update = useCallback(
+    (id: string, name: string, color: string): UpdateResult => {
+      const result = updateMedicine(medicines, id, name, color)
+      if (result.ok) persist(result.medicines)
+      return result
+    },
+    [medicines, persist],
   )
 
   const remove = useCallback(
-    (id: string) => update(medicines.filter((m) => m.id !== id)),
-    [medicines, update],
+    (id: string) => persist(medicines.filter((m) => m.id !== id)),
+    [medicines, persist],
   )
 
-  return { medicines, add, remove }
+  return { medicines, add, update, remove }
 }

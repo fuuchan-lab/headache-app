@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { formatDateTime, formatElapsed } from '../format.ts'
 import { useI18n } from '../i18n/useI18n.ts'
+import { localizeMedicineName } from '../medicineNames.ts'
 import type { AppRecord } from '../types.ts'
 
 export function MedStatus({ records }: { records: AppRecord[] }) {
@@ -20,7 +21,7 @@ export function MedStatus({ records }: { records: AppRecord[] }) {
         <>
           <p className="big">{formatElapsed(now - last.ts, t)}</p>
           <p className="muted">
-            {formatDateTime(last.ts, lang)}　{last.name}
+            {formatDateTime(last.ts, lang)}　{localizeMedicineName(last.name, lang)}
           </p>
         </>
       ) : (

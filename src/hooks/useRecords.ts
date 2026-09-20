@@ -83,6 +83,19 @@ export function useRecords() {
     [reload],
   )
 
+  /** 薬の名前を変えた時に、過去の服薬の記録の薬名も新しい名前にする（同期の対象にもなる） */
+  const renameMedication = useCallback(
+    async (oldName: string, newName: string) => {
+      const now = Date.now()
+      const targets = (await getAllRecords()).flatMap((r) =>
+        r.type === 'medication' && !r.deleted && r.name === oldName ? [r] : [],
+      )
+      await Promise.all(targets.map((r) => putRecord({ ...r, name: newName, updatedAt: now, synced: false })))
+      await reload()
+    },
+    [reload],
+  )
+
   const remove = useCallback(
     async (record: AppRecord) => {
       await softDeleteRecord(record)
@@ -91,5 +104,5 @@ export function useRecords() {
     [reload],
   )
 
-  return { records, loaded, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, remove }
+  return { records, loaded, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, renameMedication, remove }
 }

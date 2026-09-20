@@ -1,5 +1,6 @@
 import { tabletsLabel } from '../format.ts'
 import { useI18n } from '../i18n/useI18n.ts'
+import { localizeMedicineName } from '../medicineNames.ts'
 import { TABLET_OPTIONS, type Medicine } from '../settings.ts'
 
 interface Props {
@@ -14,7 +15,7 @@ const OTHER = '__other__'
 
 /** 薬の選択（設定した薬 or 自由入力）と錠数のドロップダウン。服薬の記録・編集で共通 */
 export function MedicineFields({ medicines, name, tablets, onName, onTablets }: Props) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const isCustom = !medicines.some((m) => m.name === name)
 
   return (
@@ -28,7 +29,7 @@ export function MedicineFields({ medicines, name, tablets, onName, onTablets }: 
           >
             {medicines.map((m) => (
               <option key={m.id} value={m.name}>
-                {m.name}
+                {localizeMedicineName(m.name, lang)}
               </option>
             ))}
             <option value={OTHER}>{t('field.other')}</option>

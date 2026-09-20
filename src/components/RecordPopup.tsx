@@ -51,7 +51,7 @@ export function RecordPopup({ record, medicines, onClose }: Props) {
           ) : (
             <PillIcon color={colorFor(medicines, record.name)} size={20} />
           )}
-          {recordTitle(record, t)}
+          {recordTitle(record, t, lang)}
           {record.pressure !== null && <span className="muted">　{record.pressure.toFixed(1)} hPa</span>}
         </p>
         {record.note && <p className="sticky-note">{record.note}</p>}

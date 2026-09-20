@@ -1,5 +1,6 @@
 /** Excel に書き出す表の中身を作る。ライブラリに依存しない部分（テストしやすいよう分けている） */
-import type { TFn } from './i18n/context.ts'
+import type { Lang, TFn } from './i18n/context.ts'
+import { localizeMedicineName } from './medicineNames.ts'
 import type { AppRecord } from './types.ts'
 
 export interface Cell {
@@ -39,7 +40,7 @@ const when = (ts: number): Cell => {
 }
 
 /** 記録（頭痛・服薬）の一覧。古い順 */
-export function recordsSheet(records: AppRecord[], t: TFn): SheetContent {
+export function recordsSheet(records: AppRecord[], t: TFn, lang: Lang = 'ja'): SheetContent {
   const rows = records
     .filter((r) => !r.deleted)
     .sort((a, b) => a.ts - b.ts)
@@ -68,7 +69,7 @@ export function recordsSheet(records: AppRecord[], t: TFn): SheetContent {
             { value: t('xlsx.typeMedication') },
             null,
             null,
-            { value: r.name },
+            { value: localizeMedicineName(r.name, lang) },
             num(r.tablets),
             num(r.pressure, '0.0'),
             note(r.note),
