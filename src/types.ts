@@ -10,6 +10,12 @@ interface BaseRecord {
   lon: number | null
   /** Googleドライブへ保存済みか */
   synced: boolean
+  /** 作成時刻 (epoch ms)。変わらない。ドライブの月別ファイルの振り分けに使う */
+  createdAt: number
+  /** 最終更新時刻 (epoch ms)。端末間で新しい方を採用するために使う */
+  updatedAt: number
+  /** 削除済み。他の端末へ削除を伝えるため、記録自体は残す */
+  deleted?: boolean
 }
 
 export interface HeadacheRecord extends BaseRecord {

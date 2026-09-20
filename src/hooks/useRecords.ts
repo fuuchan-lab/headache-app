@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { deleteRecord, getAllRecords, putPhoto, putRecord } from '../db.ts'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { getAllRecords, putPhoto, putRecord, softDeleteRecord } from '../db.ts'
 import type { AppRecord, HeadacheLevel, MedicationRecord } from '../types.ts'
 
 export interface Snapshot {
@@ -10,12 +10,19 @@ export interface Snapshot {
 
 const PRESSURE_LOG_INTERVAL = 5 * 60_000
 
+/** 新しく作る記録に共通の項目。ts は記録の日時、createdAt は実際に作った時刻 */
+function stamps(ts: number) {
+  const now = Date.now()
+  return { id: crypto.randomUUID(), ts, createdAt: now, updatedAt: now, synced: false }
+}
+
 export function useRecords() {
-  const [records, setRecords] = useState<AppRecord[]>([])
+  /** 削除済みを含む全記録。同期の対象 */
+  const [all, setAll] = useState<AppRecord[]>([])
   const [loaded, setLoaded] = useState(false)
 
   const reload = useCallback(async () => {
-    setRecords(await getAllRecords())
+    setAll(await getAllRecords())
     setLoaded(true)
   }, [])
 
@@ -24,17 +31,12 @@ export function useRecords() {
     void reload()
   }, [reload])
 
+  const records = useMemo(() => all.filter((r) => !r.deleted), [all])
+  const unsyncedCount = useMemo(() => all.filter((r) => !r.synced).length, [all])
+
   const addHeadache = useCallback(
     async (level: HeadacheLevel, note: string, ts: number, snap: Snapshot) => {
-      await putRecord({
-        id: crypto.randomUUID(),
-        type: 'headache',
-        ts,
-        level,
-        note,
-        synced: false,
-        ...snap,
-      })
+      await putRecord({ ...stamps(ts), type: 'headache', level, note, ...snap })
       await reload()
     },
     [reload],
@@ -48,14 +50,12 @@ export function useRecords() {
         await putPhoto({ id: photoId, blob: photo, synced: false })
       }
       const record: MedicationRecord = {
-        id: crypto.randomUUID(),
+        ...stamps(Date.now()),
         type: 'medication',
-        ts: Date.now(),
         name,
         tablets,
         note,
         photoId,
-        synced: false,
         ...snap,
       }
       await putRecord(record)
@@ -67,15 +67,9 @@ export function useRecords() {
   /** アプリを開いた時の気圧を記録する。短時間の連続記録は間引く */
   const logPressure = useCallback(
     async (snap: Snapshot) => {
-      const last = (await getAllRecords()).find((r) => r.pressure !== null)
+      const last = (await getAllRecords()).find((r) => !r.deleted && r.pressure !== null)
       if (last && Date.now() - last.ts < PRESSURE_LOG_INTERVAL) return
-      await putRecord({
-        id: crypto.randomUUID(),
-        type: 'pressure',
-        ts: Date.now(),
-        synced: false,
-        ...snap,
-      })
+      await putRecord({ ...stamps(Date.now()), type: 'pressure', ...snap })
       await reload()
     },
     [reload],
@@ -83,7 +77,7 @@ export function useRecords() {
 
   const update = useCallback(
     async (record: AppRecord) => {
-      await putRecord(record)
+      await putRecord({ ...record, updatedAt: Date.now(), synced: false })
       await reload()
     },
     [reload],
@@ -91,11 +85,11 @@ export function useRecords() {
 
   const remove = useCallback(
     async (record: AppRecord) => {
-      await deleteRecord(record)
+      await softDeleteRecord(record)
       await reload()
     },
     [reload],
   )
 
-  return { records, loaded, addHeadache, addMedication, logPressure, update, remove }
+  return { records, loaded, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, remove }
 }

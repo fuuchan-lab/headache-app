@@ -702,3 +702,34 @@ button.danger-btn {
     padding-top: 32px;
   }
 }
+
+/* 付箋メモ */
+textarea.sticky {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 4px 4px 16px 4px;
+  background: #fef08a;
+  color: #422006;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+textarea.sticky::placeholder {
+  color: #a16207;
+}
+
+.sticky-note {
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  border-radius: 4px 4px 16px 4px;
+  background: #fef08a;
+  color: #422006;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}

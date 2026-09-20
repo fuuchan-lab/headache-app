@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import type { GoogleAuth } from '../hooks/useGoogleAuth.ts'
+import type { SyncState } from '../hooks/useSync.ts'
 
 interface Props {
   view: 'home' | 'settings'
   onToggleSettings: () => void
   auth: GoogleAuth
+  sync: SyncState
+  unsyncedCount: number
 }
 
 /** アプリ名・設定ボタン・Googleログインボタン（CapLog と同じ並び） */
-export function Header({ view, onToggleSettings, auth }: Props) {
+export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Props) {
   const { account, connecting, login } = auth
   const [accountOpen, setAccountOpen] = useState(false)
 
@@ -60,6 +63,8 @@ export function Header({ view, onToggleSettings, auth }: Props) {
       {accountOpen && account && (
         <AccountModal
           account={account}
+          sync={sync}
+          unsyncedCount={unsyncedCount}
           onClose={() => setAccountOpen(false)}
           onSwitch={() => {
             setAccountOpen(false)
@@ -77,12 +82,26 @@ export function Header({ view, onToggleSettings, auth }: Props) {
 
 interface ModalProps {
   account: NonNullable<GoogleAuth['account']>
+  sync: SyncState
+  unsyncedCount: number
   onClose: () => void
   onSwitch: () => void
   onSignOut: () => void
 }
 
-function AccountModal({ account, onClose, onSwitch, onSignOut }: ModalProps) {
+function syncText(sync: SyncState, unsyncedCount: number): string {
+  if (sync.status === 'syncing') return '同期中…'
+  if (sync.status === 'error') {
+    return `同期できませんでした（未同期 ${unsyncedCount}件）。通信状況を確認するか、ログインし直してください。`
+  }
+  if (unsyncedCount > 0) return `未同期の記録が ${unsyncedCount}件 あります。`
+  if (sync.lastSyncAt) {
+    return `同期済み（${new Date(sync.lastSyncAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}）`
+  }
+  return '同期の準備中です。'
+}
+
+function AccountModal({ account, sync, unsyncedCount, onClose, onSwitch, onSignOut }: ModalProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -102,6 +121,12 @@ function AccountModal({ account, onClose, onSwitch, onSignOut }: ModalProps) {
         </div>
         <p>{account.email ?? account.name ?? 'Googleアカウント'}</p>
         <p className="muted">データの保存先: Google ドライブの「頭痛と気圧の記録」フォルダー</p>
+        <p className={sync.status === 'error' ? 'error' : 'muted'} role="status">
+          {syncText(sync, unsyncedCount)}
+        </p>
+        <button className="secondary" disabled={sync.status === 'syncing'} onClick={() => void sync.syncNow()}>
+          今すぐ同期
+        </button>
         <button className="secondary" onClick={onSwitch}>
           アカウントを切り替え
         </button>

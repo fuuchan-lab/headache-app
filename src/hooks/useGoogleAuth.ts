@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { clearSyncIndex } from '../sync.ts'
 import {
   clearToken,
   driveConfig,
@@ -91,11 +92,13 @@ export function useGoogleAuth() {
 
   const signOut = useCallback(() => {
     signOutDrive()
+    clearSyncIndex()
     setAccount(null)
   }, [])
 
   const switchAccount = useCallback(async () => {
     signOutDrive()
+    clearSyncIndex()
     setAccount(null)
     if (await connect('select_account')) {
       say({ kind: 'ok', text: 'アカウントを切り替えました。' })

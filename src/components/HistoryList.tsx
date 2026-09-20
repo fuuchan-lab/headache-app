@@ -85,7 +85,6 @@ export function HistoryList({ records, medicines, onUpdate, onRemove }: Props) {
                 <span className="dot" style={{ background: LEVEL_COLORS[r.level] }} />
                 頭痛 {r.level}（{LEVEL_LABELS[r.level]}）
                 {r.pressure !== null && <span className="muted">　{r.pressure.toFixed(1)} hPa</span>}
-                {r.note && <span className="note">　{r.note}</span>}
               </p>
             ) : (
               <>
@@ -93,11 +92,11 @@ export function HistoryList({ records, medicines, onUpdate, onRemove }: Props) {
                   <PillIcon color={colorFor(medicines, r.name)} size={16} /> {r.name}
                   {r.tablets !== undefined && <span> {r.tablets}錠</span>}
                   {r.pressure !== null && <span className="muted">　{r.pressure.toFixed(1)} hPa</span>}
-                  {r.note && <span className="note">　{r.note}</span>}
                 </p>
                 {r.photoId && <Photo id={r.photoId} />}
               </>
             )}
+            {editingId !== r.id && r.note && <p className="sticky-note">{r.note}</p>}
           </li>
         ))}
       </ul>

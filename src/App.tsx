@@ -11,11 +11,13 @@ import { useGoogleAuth } from './hooks/useGoogleAuth.ts'
 import { useMedicines } from './hooks/useMedicines.ts'
 import { usePressure } from './hooks/usePressure.ts'
 import { useRecords, type Snapshot } from './hooks/useRecords.ts'
+import { useSync } from './hooks/useSync.ts'
 
 export default function App() {
   const [view, setView] = useState<'home' | 'settings'>('home')
-  const { records, addHeadache, addMedication, logPressure, update, remove } = useRecords()
+  const { records, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, remove } = useRecords()
   const auth = useGoogleAuth()
+  const sync = useSync(auth.account !== null, unsyncedCount, reload)
   const { medicines, add: addMedicine, remove: removeMedicine } = useMedicines()
 
   const pressure = usePressure((forecast, pos) => {
@@ -30,7 +32,13 @@ export default function App() {
 
   return (
     <main className="app">
-      <Header view={view} onToggleSettings={() => setView(view === 'home' ? 'settings' : 'home')} auth={auth} />
+      <Header
+        view={view}
+        onToggleSettings={() => setView(view === 'home' ? 'settings' : 'home')}
+        auth={auth}
+        sync={sync}
+        unsyncedCount={unsyncedCount}
+      />
 
       {view === 'settings' ? (
         <SettingsPage medicines={medicines} onAdd={addMedicine} onRemove={removeMedicine} />

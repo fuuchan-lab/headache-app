@@ -18,6 +18,7 @@ const TOKEN_KEY = 'headache-drive-token'
 const SESSION_KEY = 'headache-drive-session'
 
 let accessToken: string | null = null
+let folderIdCache: string | null = null
 
 export function isDriveConfigured(): boolean {
   return driveConfig.clientId.trim() !== '' && driveConfig.clientId.trim() !== 'YOUR_GOOGLE_CLIENT_ID'
@@ -126,19 +127,20 @@ export async function driveFetch(url: string, init: RequestInit = {}, allowRetry
 
 /** アプリ用フォルダーを探し、なければ作って ID を返す */
 export async function ensureFolder(): Promise<string> {
+  if (folderIdCache) return folderIdCache
   const q = encodeURIComponent(
     `name='${driveConfig.folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
   )
   const list = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`)
   const { files } = (await list.json()) as { files?: { id: string }[] }
-  if (files && files.length > 0) return files[0].id
+  if (files && files.length > 0) return (folderIdCache = files[0].id)
 
   const created = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: driveConfig.folderName, mimeType: 'application/vnd.google-apps.folder' }),
   })
-  return ((await created.json()) as { id: string }).id
+  return (folderIdCache = ((await created.json()) as { id: string }).id)
 }
 
 export interface UserInfo {
@@ -161,8 +163,71 @@ export async function fetchUserInfo(): Promise<UserInfo> {
 export function signOutDrive() {
   const token = accessToken
   setSession(false)
+  folderIdCache = null
   clearToken()
   if (token && typeof google !== 'undefined' && google.accounts?.oauth2) {
     google.accounts.oauth2.revoke(token, () => {})
   }
+}
+
+export interface DriveFile {
+  id: string
+  name: string
+  modifiedTime: string
+}
+
+/** フォルダー内のファイルを全件取得する */
+export async function listFolderFiles(folderId: string): Promise<DriveFile[]> {
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false`)
+  const files: DriveFile[] = []
+  let pageToken = ''
+  do {
+    const url =
+      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=nextPageToken,files(id,name,modifiedTime)` +
+      `&pageSize=1000&spaces=drive${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`
+    const data = (await (await driveFetch(url)).json()) as { files?: DriveFile[]; nextPageToken?: string }
+    files.push(...(data.files ?? []))
+    pageToken = data.nextPageToken ?? ''
+  } while (pageToken)
+  return files
+}
+
+export async function downloadText(fileId: string): Promise<string> {
+  return (await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`)).text()
+}
+
+export async function downloadBlob(fileId: string): Promise<Blob> {
+  return (await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`)).blob()
+}
+
+export interface UploadParams {
+  /** 指定すると既存ファイルの内容を更新する */
+  id?: string
+  name: string
+  mimeType: string
+  blob: Blob
+  parentId: string
+}
+
+export async function uploadFile({ id, name, mimeType, blob, parentId }: UploadParams): Promise<{ id: string; modifiedTime: string }> {
+  const metadata = id ? { name } : { name, parents: [parentId] }
+  const boundary = `headache-${Date.now()}`
+  const body = new Blob([
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`,
+    `--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`,
+    blob,
+    `\r\n--${boundary}--`,
+  ])
+  const base = 'https://www.googleapis.com/upload/drive/v3/files'
+  const url = `${id ? `${base}/${id}` : base}?uploadType=multipart&fields=id,modifiedTime`
+  const res = await driveFetch(url, {
+    method: id ? 'PATCH' : 'POST',
+    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body,
+  })
+  return (await res.json()) as { id: string; modifiedTime: string }
+}
+
+export async function deleteFile(fileId: string) {
+  await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, { method: 'DELETE' })
 }

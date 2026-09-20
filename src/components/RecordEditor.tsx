@@ -4,6 +4,7 @@ import type { Medicine } from '../settings.ts'
 import type { AppRecord, HeadacheRecord, MedicationRecord } from '../types.ts'
 import { LevelSlider } from './LevelSlider.tsx'
 import { MedicineFields } from './MedicineFields.tsx'
+import { StickyNoteField } from './StickyNoteField.tsx'
 
 interface Props {
   record: HeadacheRecord | MedicationRecord
@@ -50,10 +51,10 @@ export function RecordEditor({ record, medicines, onSave, onCancel }: Props) {
           onTablets={setTablets}
         />
       )}
-      <label className="field">
-        メモ
-        <input type="text" value={note} onChange={(e) => setNote(e.target.value)} />
-      </label>
+      <div className="field">
+        付箋メモ
+        <StickyNoteField value={note} onChange={setNote} />
+      </div>
       <div className="row">
         <button className="link" onClick={onCancel}>
           キャンセル

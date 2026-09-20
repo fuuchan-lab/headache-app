@@ -11,8 +11,10 @@ import {
   YAxis,
 } from 'recharts'
 import { colorFor, type Medicine } from '../settings.ts'
-import { LEVEL_COLORS, type AppRecord, type HeadacheLevel } from '../types.ts'
+import { LEVEL_COLORS, LEVEL_LABELS, type AppRecord, type HeadacheLevel } from '../types.ts'
+import { NotePopup, type NoteMark } from './NotePopup.tsx'
 import { PillIcon } from './PillIcon.tsx'
+import { StickyIcon } from './StickyIcon.tsx'
 
 const DAY = 86_400_000
 const RANGES = [
@@ -36,6 +38,19 @@ interface MedMark {
   color: string
 }
 
+/** 複数日表示の横軸の目盛り。日付が重複しないよう、0時の位置に置く（長い期間は間引く） */
+function dayTicks(from: number, to: number, days: number): number[] {
+  const step = days <= 7 ? 1 : Math.ceil(days / 6)
+  const ticks: number[] = []
+  const d = new Date(from)
+  d.setHours(24, 0, 0, 0)
+  while (d.getTime() <= to) {
+    ticks.push(d.getTime())
+    d.setDate(d.getDate() + step)
+  }
+  return ticks
+}
+
 function tickLabel(t: number, days: number) {
   const d = new Date(t)
   return days <= 1 ? `${d.getHours()}時` : `${d.getMonth() + 1}/${d.getDate()}`
@@ -49,11 +64,12 @@ function LevelDot({ cx, cy, payload }: { cx?: number; cy?: number; payload?: Poi
 
 export function PressureChart({ records, medicines }: { records: AppRecord[]; medicines: Medicine[] }) {
   const [days, setDays] = useState(3)
+  const [openNote, setOpenNote] = useState<NoteMark | null>(null)
   // 表示範囲は「最新の記録」を基準にして、描画中に現在時刻を読まない
   const latest = records[0]?.ts ?? 0
   const from = latest - days * DAY
 
-  const { points, meds, pressureDomain } = useMemo(() => {
+  const { points, meds, notes, pressureDomain } = useMemo(() => {
     const inRange = records.filter((r) => r.ts >= from).sort((a, b) => a.ts - b.ts)
     const points: Point[] = inRange.flatMap((r): Point[] => {
       if (r.type === 'headache') return [{ t: r.ts, level: r.level, pressure: r.pressure ?? undefined }]
@@ -63,12 +79,21 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
     const meds: MedMark[] = inRange.flatMap((r): MedMark[] =>
       r.type === 'medication' ? [{ id: r.id, t: r.ts, name: r.name, color: colorFor(medicines, r.name) }] : [],
     )
+    // メモのある記録には付箋マークを付ける
+    const notes: NoteMark[] = inRange.flatMap((r): NoteMark[] => {
+      if (r.type === 'pressure' || !r.note) return []
+      const title =
+        r.type === 'headache'
+          ? `頭痛 ${r.level}（${LEVEL_LABELS[r.level]}）`
+          : `${r.name}${r.tablets !== undefined ? ` ${r.tablets}錠` : ''}`
+      return [{ id: r.id, t: r.ts, title, text: r.note }]
+    })
     // 錠剤アイコンを置く位置が決まるよう、気圧軸の範囲は自分で計算する
     const values = points.flatMap((p) => (p.pressure === undefined ? [] : [p.pressure]))
     const pressureDomain: [number, number] = values.length
       ? [Math.floor(Math.min(...values)) - 2, Math.ceil(Math.max(...values)) + 2]
       : [990, 1030]
-    return { points, meds, pressureDomain }
+    return { points, meds, notes, pressureDomain }
   }, [records, medicines, from])
 
   const usedMeds = useMemo(() => {
@@ -107,6 +132,7 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
               type="number"
               scale="time"
               domain={[from, latest]}
+              ticks={days > 1 ? dayTicks(from, latest, days) : undefined}
               tickFormatter={(t: number) => tickLabel(t, days)}
               tick={{ fontSize: 11 }}
             />
@@ -149,6 +175,26 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
                 )}
               />
             ))}
+            {notes.map((n) => (
+              <ReferenceDot
+                key={n.id}
+                yAxisId="p"
+                x={n.t}
+                y={pressureDomain[0] + 1}
+                shape={({ cx, cy }) => (
+                  // 指で押しやすいよう、見た目より広い透明な当たり判定を重ねる
+                  <g
+                    role="button"
+                    aria-label={`メモを開く: ${n.title}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setOpenNote(n)}
+                  >
+                    <circle cx={cx} cy={cy} r={18} fill="transparent" />
+                    <StickyIcon size={ICON_SIZE} x={(cx ?? 0) - ICON_SIZE / 2} y={(cy ?? 0) - ICON_SIZE / 2} />
+                  </g>
+                )}
+              />
+            ))}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -167,7 +213,14 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
             {name}
           </li>
         ))}
+        {notes.length > 0 && (
+          <li>
+            <StickyIcon size={16} />
+            メモ（タップで表示）
+          </li>
+        )}
       </ul>
+      {openNote && <NotePopup note={openNote} onClose={() => setOpenNote(null)} />}
     </section>
   )
 }

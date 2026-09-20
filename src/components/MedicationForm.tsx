@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { shrinkImage } from '../image.ts'
 import type { Medicine } from '../settings.ts'
 import { MedicineFields } from './MedicineFields.tsx'
+import { StickyNoteField } from './StickyNoteField.tsx'
 
 interface Props {
   medicines: Medicine[]
@@ -59,12 +60,7 @@ export function MedicationForm({ medicines, onSave }: Props) {
         onName={setName}
         onTablets={setTablets}
       />
-      <input
-        type="text"
-        placeholder="メモ（任意）例: 食後"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-      />
+      <StickyNoteField value={note} onChange={setNote} placeholder="付箋メモ（任意）例: 食後、頭痛がひどくなる前に" />
       <div className="row">
         <label className="file-btn">
           📷 写真を撮る／選ぶ

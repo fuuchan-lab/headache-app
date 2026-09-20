@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { formatDateTime } from '../format.ts'
 import type { HeadacheLevel } from '../types.ts'
 import { LevelSlider } from './LevelSlider.tsx'
+import { StickyNoteField } from './StickyNoteField.tsx'
 
 interface Props {
   pressure: number | null
@@ -36,11 +37,10 @@ export function HeadacheForm({ pressure, onSave }: Props) {
       <h2>今の頭痛</h2>
       <LevelSlider value={level} onChange={pick} untouched={selectedAt === null} />
       {selectedAt !== null && <p className="muted">選択した日時: {formatDateTime(selectedAt)}</p>}
-      <input
-        type="text"
-        placeholder="メモ（任意）例: こめかみがズキズキ"
+      <StickyNoteField
         value={note}
-        onChange={(e) => setNote(e.target.value)}
+        onChange={setNote}
+        placeholder="付箋メモ（任意）例: こめかみがズキズキ。グラフに付箋マークが付きます"
       />
       <button className="primary" disabled={selectedAt === null} onClick={submit}>
         記録する{pressure !== null && `（${pressure.toFixed(1)} hPa）`}
