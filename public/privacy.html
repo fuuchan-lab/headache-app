@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>頭痛ログ プライバシーポリシー / Privacy Policy</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
+    <style>
+      :root {
+        --bg: #f4f7f6;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --line: #d9e0e4;
+        --accent: #0f766e;
+        color-scheme: light dark;
+      }
+      /* アプリの設定で選んだ配色（ライト/ダーク）に合わせる。自動の時は端末の設定に従う。
+         ダークの色は2か所に同じものを書く必要があるので、変えるときは両方そろえる */
+      :root[data-theme='light'] {
+        color-scheme: light;
+      }
+      :root[data-theme='dark'] {
+        color-scheme: dark;
+        --bg: #0f172a;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --line: #334155;
+        --accent: #2dd4bf;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme]) {
+          --bg: #0f172a;
+          --text: #e5e7eb;
+          --muted: #94a3b8;
+          --line: #334155;
+          --accent: #2dd4bf;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+        line-height: 1.75;
+        overflow-wrap: anywhere;
+      }
+      main {
+        width: min(100%, 720px);
+        margin: 0 auto;
+        padding: 32px 16px 56px;
+      }
+      h1 { font-size: 1.5rem; margin: 0 0 4px; }
+      h2 {
+        font-size: 1.05rem;
+        margin: 32px 0 8px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+      p, li { font-size: 0.95rem; }
+      ul { padding-left: 1.3em; }
+      .meta { color: var(--muted); font-size: 0.85rem; margin: 0 0 24px; }
+      .lang-section { margin-top: 56px; }
+      a { color: var(--accent); }
+      code { font-size: 0.9em; }
+      .back { display: inline-block; margin-bottom: 20px; font-size: 0.9rem; }
+    </style>
+    <script>
+      // 選んだ配色を、画面が描かれる前に反映する（ちらつき防止）。詳しい処理は src/theme.ts
+      try {
+        var theme = localStorage.getItem('headache-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="./">← 頭痛ログに戻る / Back to Headache Log</a>
+
+      <section lang="ja">
+        <h1>頭痛ログ プライバシーポリシー</h1>
+        <p class="meta">最終更新日:2026年9月22日</p>
+
+        <p>頭痛ログ(以下「本アプリ」)は、頭痛の度合い・服薬・現在地の気圧を記録し、気圧の変化と頭痛の関係を確認するためのウェブアプリ(PWA)です。本アプリには運営者のサーバーがなく、記録データはすべて利用者ご自身の Google ドライブと端末内に保存されます。運営者がデータを受け取ることはありません。</p>
+
+        <h2>取得する情報と利用目的</h2>
+        <ul>
+          <li><strong>頭痛の記録</strong>:頭痛の度合い(0〜5)、メモ、記録した日時。頭痛と気圧の関係をグラフで確認するために使います。</li>
+          <li><strong>服薬の記録</strong>:薬の名前、錠数、メモ、写真(任意)、記録した日時。服薬の履歴の表示と、最後に服薬してからの経過時間・次に服薬できるまでの時間の計算に使います。</li>
+          <li><strong>位置情報</strong>:端末の現在位置(緯度・経度)。その場所の気圧・天気・気温・湿度と地名を取得し、記録に添えるために使います。位置情報の利用は、ブラウザーが求める許可を利用者が与えた場合に限ります。許可しなくてもアプリは使えますが、気圧と地名は取得できません。</li>
+          <li><strong>気圧などの観測値</strong>:アプリを開いた時などに、その場所の気圧を記録します。</li>
+          <li><strong>Google アカウントのプロフィール(名前・プロフィール画像)</strong>:ログイン中のアカウントを画面に表示するためだけに使います。</li>
+        </ul>
+        <p>頭痛や服薬の記録は健康に関する情報です。本アプリは、これらを利用者ご自身の Google ドライブと端末の外には保存せず、運営者や第三者が見ることはありません。本アプリは記録の整理と閲覧のための道具であり、医療上の診断や助言を行うものではありません。</p>
+
+        <h2>Google ユーザーデータの取り扱い</h2>
+        <p>本アプリは Google アカウントでのログイン時に、次の権限のみを要求します。</p>
+        <ul>
+          <li><code>drive.file</code>:本アプリが作成したファイル(Google ドライブの「Headache_Log」フォルダー内の、月ごとの記録データ、薬の設定、写真、書き出した Excel ファイル)の作成・読み取り・更新・削除。利用者が本アプリ以外で作成した Google ドライブ上のファイルにはアクセスしません。</li>
+          <li><code>userinfo.profile</code>:名前とプロフィール画像の表示。</li>
+        </ul>
+        <p>これらのデータは利用者の端末と Google の間で直接やり取りされ、本アプリの運営者を含む第三者に送信・保存・共有されることはありません。広告目的での利用、販売、AI・機械学習モデルの学習への利用も行いません。本アプリによる Google API から取得した情報の使用および他のアプリへの転送は、<a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API サービスのユーザーデータに関するポリシー</a>(限定使用の要件を含む)に準拠します。</p>
+
+        <h2>端末内に保存する情報</h2>
+        <ul>
+          <li>記録(頭痛・服薬・気圧)と写真は、オフラインでも使えるよう、端末のブラウザー内のデータベース(IndexedDB)に保存します。</li>
+          <li>ログイン状態を保つための Google のアクセストークン(有効期限付き)、薬の設定、言語・配色の設定、同期の状態、取得した地名の一時保存(約1km単位)を、ブラウザーのローカルストレージに保存します。</li>
+        </ul>
+        <p>これらは端末の外には送信されません(ただし、記録と薬の設定は、ログインした場合に利用者ご自身の Google ドライブへ同期されます)。</p>
+
+        <h2>外部サービス</h2>
+        <p>本アプリは、次の外部サービスに接続します。これらのサービスには、通常のウェブ閲覧と同様に IP アドレスなどの通信情報も送信されます。</p>
+        <ul>
+          <li><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>:気圧・天気・気温・湿度の取得のため、現在位置の緯度・経度(小数点以下4桁、約10mの精度)を送信します。</li>
+          <li><a href="https://nominatim.org/" target="_blank" rel="noopener">OpenStreetMap Nominatim</a>:地名(都道府県・市区町村)の取得のため、現在位置の緯度・経度(小数点以下4桁)を送信します。</li>
+          <li>Google(Google アカウントでのログインと Google ドライブとの同期)。ログインの部品を <code>accounts.google.com</code> から読み込みます。</li>
+        </ul>
+        <p>本アプリは、アクセス解析や広告のためのサービスを使用していません。</p>
+
+        <h2>データの削除とアクセスの取り消し</h2>
+        <ul>
+          <li>個別の記録は、アプリ内の「削除」で画面から消えます。ログイン中は、その削除も Google ドライブと他の端末に反映されます。</li>
+          <li>すべての記録を消す場合は、Google ドライブの「Headache_Log」フォルダーを削除してください。端末内のデータは、ブラウザーの設定でこのサイトのデータを削除すると消えます。</li>
+          <li>アプリ内の「ログアウト」で、端末に保存したアクセストークンを削除します。</li>
+          <li>本アプリへのアクセス許可は、<a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google アカウントのサードパーティ アクセス設定</a>からいつでも取り消せます。</li>
+        </ul>
+
+        <h2>お問い合わせ</h2>
+        <p>本ポリシーに関するお問い合わせは、<a href="https://github.com/fuuchan-lab/headache-app/issues" target="_blank" rel="noopener">GitHub の Issues</a> からお寄せください。個人の記録の内容など、公開したくない情報は書かないでください。</p>
+
+        <h2>改定</h2>
+        <p>本ポリシーを変更する場合は、このページで告知し、最終更新日を更新します。</p>
+      </section>
+
+      <section class="lang-section" lang="en">
+        <h1>Headache Log Privacy Policy</h1>
+        <p class="meta">Last updated: September 22, 2026</p>
+
+        <p>Headache Log ("the app") is a web app (PWA) for recording headache severity, medication and the air pressure at your current location, so you can see how pressure changes relate to your headaches. The app has no server of its own: all record data is stored in the user's own Google Drive and on the user's device. The developer never receives your data.</p>
+
+        <h2>Information collected and how it is used</h2>
+        <ul>
+          <li><strong>Headache records</strong>: severity (0–5), a note, and the date/time. Used to show the relationship between headaches and air pressure in the chart.</li>
+          <li><strong>Medication records</strong>: medicine name, number of tablets, a note, an optional photo, and the date/time. Used to show your dose history and to calculate the time since the last dose and until the next dose is allowed.</li>
+          <li><strong>Location</strong>: the device's current position (latitude and longitude). Used to look up the air pressure, weather, temperature, humidity and place name for that spot and attach them to your records. Location is used only if you grant the permission the browser asks for. The app still works without it, but pressure and place name are unavailable.</li>
+          <li><strong>Pressure readings</strong>: the app records the air pressure at your location when you open it.</li>
+          <li><strong>Google profile (name and profile picture)</strong> is used only to show which account is signed in.</li>
+        </ul>
+        <p>Headache and medication records are health-related information. The app stores them only in your own Google Drive and on your device; neither the developer nor any third party can see them. The app is a tool for organizing and viewing your records and does not provide medical diagnosis or advice.</p>
+
+        <h2>Use of Google user data</h2>
+        <p>When the user signs in with Google, the app requests only these permissions:</p>
+        <ul>
+          <li><code>drive.file</code>: create, read, update and delete the files the app itself creates (the monthly record data, medicine settings, photos and exported Excel files in the "Headache_Log" folder in Google Drive). The app cannot access any other files in the user's Google Drive.</li>
+          <li><code>userinfo.profile</code>: show the user's name and profile picture.</li>
+        </ul>
+        <p>This data travels directly between the user's device and Google. It is never sent to, stored by, or shared with the app's developer or any other third party. It is not used for advertising, sold, or used to train AI or machine-learning models. The app's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+        <h2>Information stored on the device</h2>
+        <ul>
+          <li>Records (headache, medication, pressure) and photos are stored in the browser's database (IndexedDB) on the device so the app works offline.</li>
+          <li>A time-limited Google access token (to keep the user signed in), the medicine settings, language and appearance settings, sync state, and a temporary cache of place names (about 1 km resolution) are stored in the browser's local storage.</li>
+        </ul>
+        <p>These are not sent off the device (except that, when you are signed in, records and medicine settings are synced to your own Google Drive).</p>
+
+        <h2>Third-party services</h2>
+        <p>The app connects to the services below. As with any web browsing, they also receive connection information such as the user's IP address.</p>
+        <ul>
+          <li><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>: receives the current latitude and longitude (rounded to 4 decimal places, about 10 m) to return air pressure, weather, temperature and humidity.</li>
+          <li><a href="https://nominatim.org/" target="_blank" rel="noopener">OpenStreetMap Nominatim</a>: receives the current latitude and longitude (rounded to 4 decimal places) to return the place name (prefecture / city).</li>
+          <li>Google (Google sign-in and syncing with Google Drive). The sign-in component is loaded from <code>accounts.google.com</code>.</li>
+        </ul>
+        <p>The app does not use any analytics or advertising services.</p>
+
+        <h2>Deleting data and revoking access</h2>
+        <ul>
+          <li>Individual records disappear from the app when you use "Delete". While signed in, the deletion is also applied to Google Drive and your other devices.</li>
+          <li>To remove all records, delete the "Headache_Log" folder in Google Drive. Data on the device is removed by clearing this site's data in the browser settings.</li>
+          <li>"Sign out" in the app removes the access token stored on the device.</li>
+          <li>The app's access can be revoked at any time from <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">your Google Account's third-party access settings</a>.</li>
+        </ul>
+
+        <h2>Contact</h2>
+        <p>Questions about this policy can be submitted via <a href="https://github.com/fuuchan-lab/headache-app/issues" target="_blank" rel="noopener">GitHub Issues</a>. Please do not post personal record contents or other information you do not want to make public.</p>
+
+        <h2>Changes</h2>
+        <p>If this policy changes, the change will be announced on this page and the last-updated date will be revised.</p>
+      </section>
+    </main>
+  </body>
+</html>

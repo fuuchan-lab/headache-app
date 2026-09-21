@@ -781,6 +781,15 @@ textarea.sticky::placeholder {
   min-height: 320px;
 }
 
+.privacy-link {
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.privacy-link a {
+  color: var(--muted);
+}
+
 .theme-row {
   margin-top: 12px;
 }

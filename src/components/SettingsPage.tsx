@@ -204,6 +204,12 @@ export function SettingsPage({ medicines, onAdd, onEdit, onRemove, onMove, recor
           </p>
         )}
       </section>
+
+      <p className="privacy-link">
+        <a href="./privacy.html" target="_blank" rel="noopener">
+          {t('settings.privacy')}
+        </a>
+      </p>
     </>
   )
 }
