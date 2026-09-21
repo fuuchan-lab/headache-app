@@ -24,8 +24,39 @@
   font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
 }
 
+/* 配色は、設定で「ライト」「ダーク」を選ぶとその配色に固定（data-theme）。「自動」は端末の設定に従う。
+   ダークの色は2か所に同じものを書く必要があるので、変えるときは両方そろえる */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --border: #334155;
+  --accent: #2dd4bf;
+  --accent-text: #042f2e;
+  --danger: #f87171;
+  --caution-bg: #422006;
+  --caution-text: #fde68a;
+  --warning-bg: #450a0a;
+  --warning-text: #fecaca;
+  --ok-bg: #052e16;
+  --ok-text: #bbf7d0;
+  --info-bg: #172554;
+  --info-text: #bfdbfe;
+  --gear-light: #d5fff9;
+  --gear-mid: #2dd4bf;
+  --gear-dark: #0f766e;
+  --gear-hole-light: #94a3b8;
+  --gear-hole-dark: #0b1220;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #0f172a;
     --card: #1e293b;
     --text: #e5e7eb;
@@ -435,6 +466,18 @@ select {
   gap: 8px;
 }
 
+/* 薬の一覧の右側（並べ替え・編集・削除）。狭い画面でも押しやすい大きさを保つ */
+.med-actions {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+button.link.move-button {
+  padding: 4px 6px;
+  min-width: 36px;
+}
+
 .legend {
   list-style: none;
   margin: 0;
@@ -733,6 +776,10 @@ textarea.sticky::placeholder {
 }
 
 /* 言語の選択（設定画面） */
+.theme-row {
+  margin-top: 12px;
+}
+
 .language-select {
   width: auto;
   min-height: 44px;

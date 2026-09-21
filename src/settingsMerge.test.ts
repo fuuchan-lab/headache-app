@@ -7,7 +7,7 @@ import {
   sameMedicines,
   serializeSettings,
 } from './settingsMerge.ts'
-import { DEFAULT_MEDICINES, addMedicine, removeMedicine, updateMedicine, visibleMedicines, type Medicine } from './settings.ts'
+import { DEFAULT_MEDICINES, addMedicine, moveMedicine, removeMedicine, updateMedicine, visibleMedicines, type Medicine } from './settings.ts'
 
 const med = (id: string, name: string, createdAt: number, updatedAt = createdAt, extra: Partial<Medicine> = {}): Medicine => ({
   id,
@@ -163,4 +163,42 @@ test('他の端末で服薬間隔をなくした場合も、新しい方（な�
   if (!cleared.ok) return
   const merged = mergeMedicines(set.medicines, cleared.medicines)
   assert.equal(merged[1].intervalHours, undefined)
+})
+
+const names = (list: Medicine[]) => visibleMedicines(list).map((m) => m.name)
+
+test('薬を1つ上・下へ動かせる。端では動かない', () => {
+  const up = moveMedicine(DEFAULT_MEDICINES, 'default-2', -1, 1_000)
+  assert.deepEqual(names(up), ['ロキソニン', 'バファリン', 'カロナール'])
+  const down = moveMedicine(up, 'default-0', 1, 2_000)
+  assert.deepEqual(names(down), ['バファリン', 'ロキソニン', 'カロナール'])
+  // 先頭を上へ・末尾を下へは、何も変えない（同じものを返す）
+  assert.equal(moveMedicine(DEFAULT_MEDICINES, 'default-0', -1), DEFAULT_MEDICINES)
+  assert.equal(moveMedicine(DEFAULT_MEDICINES, 'default-2', 1), DEFAULT_MEDICINES)
+  assert.equal(moveMedicine(DEFAULT_MEDICINES, 'nothing', 1), DEFAULT_MEDICINES)
+})
+
+test('並べ替えた後に追加した薬は、いちばん下に入る。削除した薬は並び順に影響しない', () => {
+  let list = moveMedicine(DEFAULT_MEDICINES, 'default-2', -1, 1_000)
+  const added = addMedicine(list, 'イブ', 'new-1', 5_000)
+  assert.ok(added.ok)
+  if (!added.ok) return
+  list = removeMedicine(added.medicines, 'default-1', 6_000)
+  assert.deepEqual(names(list), ['ロキソニン', 'バファリン', 'イブ'])
+  assert.deepEqual(names(moveMedicine(list, 'new-1', -1, 7_000)), ['ロキソニン', 'イブ', 'バファリン'])
+})
+
+test('並べ替えは、端末どうしで合わせても保たれ、どちらを local にしても同じ順になる', () => {
+  const reordered = moveMedicine(DEFAULT_MEDICINES, 'default-2', -1, 1_000)
+  const one = mergeMedicines(reordered, DEFAULT_MEDICINES)
+  const two = mergeMedicines(DEFAULT_MEDICINES, reordered)
+  assert.deepEqual(names(one), ['ロキソニン', 'バファリン', 'カロナール'])
+  assert.ok(sameMedicines(one, two))
+})
+
+test('並び順の位置（order）は、ドライブのファイルに書き出して読み戻せる', () => {
+  const reordered = moveMedicine(DEFAULT_MEDICINES, 'default-2', -1, 1_000)
+  const back = parseSettings(serializeSettings(reordered))
+  assert.ok(sameMedicines(back, reordered))
+  assert.deepEqual(names(back), ['ロキソニン', 'バファリン', 'カロナール'])
 })

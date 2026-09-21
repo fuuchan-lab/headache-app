@@ -29,6 +29,7 @@ export default function App() {
     add: addMedicine,
     update: updateMedicineSetting,
     remove: removeMedicine,
+    move: moveMedicine,
   } = useMedicines()
   const sync = useSync(auth.account !== null, unsyncedCount, medicinesDirty, reload, refreshMedicines)
 
@@ -78,6 +79,7 @@ export default function App() {
           onAdd={addMedicine}
           onEdit={editMedicine}
           onRemove={removeMedicine}
+          onMove={moveMedicine}
           records={records}
           loggedIn={auth.account !== null}
         />

@@ -14,6 +14,18 @@ export interface Medicine {
   deleted?: boolean
   /** 服薬間隔（時間）。決めていなければ持たない */
   intervalHours?: number
+  /** 並べ替えた時の位置（0, 1, 2…）。並べ替えていない薬は持たず、作成時刻の順になる */
+  order?: number
+}
+
+/**
+ * 薬の並び順。並べ替えた位置（order）があればそれ、なければ作成時刻の順。
+ * 同じなら ID で決め、どの端末で並べても同じ順になる（順番の違いで何度も上書きし合わないため）。
+ */
+export function compareMedicines(a: Medicine, b: Medicine): number {
+  return (
+    (a.order ?? a.createdAt) - (b.order ?? b.createdAt) || a.createdAt - b.createdAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  )
 }
 
 /** 設定にない薬（自由入力）の色 */
@@ -46,6 +58,7 @@ function normalize(list: Partial<Medicine>[]): Medicine[] {
     updatedAt: m.updatedAt ?? 0,
     ...(m.deleted ? { deleted: true } : {}),
     ...(typeof m.intervalHours === 'number' && m.intervalHours > 0 ? { intervalHours: m.intervalHours } : {}),
+    ...(typeof m.order === 'number' ? { order: m.order } : {}),
   }))
 }
 
@@ -170,6 +183,25 @@ export function updateMedicine(
     oldName: current.name,
     newName,
   }
+}
+
+/**
+ * 薬を1つ上（-1）または下（1）に動かす。端は動かせないので、そのまま返す。
+ * 動かした後は、表示中の薬すべてに位置（order）を付け直す。位置が変わった薬だけ更新時刻を進める。
+ */
+export function moveMedicine(list: Medicine[], id: string, direction: -1 | 1, now = Date.now()): Medicine[] {
+  const shown = visibleMedicines(list).sort(compareMedicines)
+  const from = shown.findIndex((m) => m.id === id)
+  const to = from + direction
+  if (from < 0 || to < 0 || to >= shown.length) return list
+  ;[shown[from], shown[to]] = [shown[to], shown[from]]
+  const positions = new Map(shown.map((m, i) => [m.id, i]))
+  return list
+    .map((m) => {
+      const order = positions.get(m.id)
+      return order === undefined || m.order === order ? m : { ...m, order, updatedAt: now }
+    })
+    .sort(compareMedicines)
 }
 
 /** 薬を削除する。他の端末にも削除が伝わるよう、印を付けて残す */

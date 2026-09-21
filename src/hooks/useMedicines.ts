@@ -3,6 +3,7 @@ import {
   addMedicine,
   isMedicinesDirty,
   loadMedicines,
+  moveMedicine,
   removeMedicine,
   saveMedicines,
   setMedicinesDirty,
@@ -55,5 +56,14 @@ export function useMedicines() {
 
   const remove = useCallback((id: string) => persist(removeMedicine(all, id)), [all, persist])
 
-  return { medicines, dirty, refresh, add, update, remove }
+  /** 1つ上（-1）・下（1）へ動かす。端では何もしない */
+  const move = useCallback(
+    (id: string, direction: -1 | 1) => {
+      const next = moveMedicine(all, id, direction)
+      if (next !== all) persist(next)
+    },
+    [all, persist],
+  )
+
+  return { medicines, dirty, refresh, add, update, remove, move }
 }

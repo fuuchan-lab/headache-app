@@ -1,6 +1,6 @@
 /** 画面の文言。日本語を基準にし、英語は同じキーをすべて持つ（足りないと型エラーになる） */
 export const ja = {
-  'app.title': '頭痛と気圧の記録',
+  'app.title': '頭痛ログ',
   'common.close': '閉じる',
   'common.note': 'メモ',
 
@@ -173,7 +173,7 @@ export const ja = {
   // 設定
   'settings.meds': '薬の設定',
   'settings.medsHelp':
-    '服薬を記録する時に選べる薬です。グラフの錠剤アイコンはここで決まる色で表示されます。過去の記録は、薬を削除しても消えません。',
+    '服薬を記録する時に選べる薬です。グラフの錠剤アイコンはここで決まる色で表示されます。▲▼で並び順を入れ替えられます（服薬を記録する時の選択肢の順になります）。過去の記録は、薬を削除しても消えません。',
   'settings.confirmRemove': '「{name}」を設定から削除しますか？',
   'settings.none': '薬が設定されていません。',
   'settings.addPlaceholder': '薬の名前を追加 例: イブ',
@@ -190,6 +190,12 @@ export const ja = {
   'settings.colorLabel': '色',
   'settings.renameNote': '名前を変えると、過去の記録 {n}件の薬の名前も新しい名前に変わります。',
   'settings.language': '言語 / Language',
+  'settings.moveUp': '{name} を上へ',
+  'settings.moveDown': '{name} を下へ',
+  'settings.theme': '画面の配色',
+  'settings.theme.auto': '自動（端末の設定に合わせる）',
+  'settings.theme.light': 'ライト',
+  'settings.theme.dark': 'ダーク',
 
   // Excel エクスポート
   'export.title': 'データのエクスポート',
@@ -222,7 +228,7 @@ export const ja = {
 export type MessageKey = keyof typeof ja
 
 export const en: Record<MessageKey, string> = {
-  'app.title': 'Headache & Pressure Log',
+  'app.title': 'Headache Log',
   'common.close': 'Close',
   'common.note': 'Note',
 
@@ -388,7 +394,7 @@ export const en: Record<MessageKey, string> = {
 
   'settings.meds': 'Medicine settings',
   'settings.medsHelp':
-    'These are the medicines you can pick when logging a dose. The pill icon on the chart uses the color set here. Past records are kept even if you delete a medicine.',
+    'These are the medicines you can pick when logging a dose. The pill icon on the chart uses the color set here. Use ▲▼ to change the order (it is the order shown when logging a dose). Past records are kept even if you delete a medicine.',
   'settings.confirmRemove': 'Remove "{name}" from your settings?',
   'settings.none': 'No medicines set.',
   'settings.addPlaceholder': 'Add a medicine, e.g. Ibuprofen',
@@ -405,6 +411,12 @@ export const en: Record<MessageKey, string> = {
   'settings.colorLabel': 'Color',
   'settings.renameNote': 'Renaming also updates the medicine name in {n} past record(s).',
   'settings.language': '言語 / Language',
+  'settings.moveUp': 'Move {name} up',
+  'settings.moveDown': 'Move {name} down',
+  'settings.theme': 'Appearance',
+  'settings.theme.auto': 'Auto (follow device)',
+  'settings.theme.light': 'Light',
+  'settings.theme.dark': 'Dark',
 
   'export.title': 'Export data',
   'export.help': 'Saves your records as an Excel file in the "{folder}" folder in Google Drive.',

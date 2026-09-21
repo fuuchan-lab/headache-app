@@ -4,6 +4,7 @@ import type { Lang } from '../i18n/context.ts'
 import { useI18n } from '../i18n/useI18n.ts'
 import { localizeMedicineName } from '../medicineNames.ts'
 import type { Medicine } from '../settings.ts'
+import { applyTheme, loadTheme, saveTheme, type ThemePreference } from '../theme.ts'
 import type { AppRecord } from '../types.ts'
 import { MedicineEditor, type EditResult } from './MedicineEditor.tsx'
 import { PillIcon } from './PillIcon.tsx'
@@ -14,6 +15,8 @@ interface Props {
   /** 名前・色・服薬間隔を変える。名前を変えた時は、過去の記録の薬名も直す */
   onEdit: (id: string, name: string, color: string, intervalHours: number | null) => Promise<EditResult>
   onRemove: (id: string) => void
+  /** 並び順を1つ上（-1）・下（1）へ動かす */
+  onMove: (id: string, direction: -1 | 1) => void
   /** 書き出す記録（削除済みを除く） */
   records: AppRecord[]
   /** Google にログインしているか（Excel は Google ドライブに保存するため必要） */
@@ -26,12 +29,19 @@ type ExportState =
   | { status: 'done'; name: string; id: string }
   | { status: 'error' }
 
-export function SettingsPage({ medicines, onAdd, onEdit, onRemove, records, loggedIn }: Props) {
+export function SettingsPage({ medicines, onAdd, onEdit, onRemove, onMove, records, loggedIn }: Props) {
   const { t, lang, setLang } = useI18n()
   const [name, setName] = useState('')
   const [error, setError] = useState<'empty' | 'duplicate' | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [exp, setExp] = useState<ExportState>({ status: 'idle' })
+  const [theme, setTheme] = useState<ThemePreference>(loadTheme)
+
+  const changeTheme = (next: ThemePreference) => {
+    setTheme(next)
+    saveTheme(next)
+    applyTheme(next)
+  }
 
   const submit = () => {
     if (onAdd(name)) {
@@ -72,13 +82,26 @@ export function SettingsPage({ medicines, onAdd, onEdit, onRemove, records, logg
             <option value="en">English</option>
           </select>
         </div>
+        <div className="row theme-row">
+          <h2>{t('settings.theme')}</h2>
+          <select
+            className="language-select"
+            value={theme}
+            aria-label={t('settings.theme')}
+            onChange={(e) => changeTheme(e.target.value as ThemePreference)}
+          >
+            <option value="auto">{t('settings.theme.auto')}</option>
+            <option value="light">{t('settings.theme.light')}</option>
+            <option value="dark">{t('settings.theme.dark')}</option>
+          </select>
+        </div>
       </section>
 
       <section className="card">
         <h2>{t('settings.meds')}</h2>
         <p className="muted">{t('settings.medsHelp')}</p>
         <ul className="history">
-          {medicines.map((m) => {
+          {medicines.map((m, index) => {
             const shown = localizeMedicineName(m.name, lang)
             if (editingId === m.id) {
               return (
@@ -101,7 +124,25 @@ export function SettingsPage({ medicines, onAdd, onEdit, onRemove, records, logg
                     <span className="muted">{t('settings.intervalShort', { h: m.intervalHours })}</span>
                   )}
                 </span>
-                <span>
+                <span className="med-actions">
+                  <button
+                    className="link move-button"
+                    disabled={index === 0}
+                    onClick={() => onMove(m.id, -1)}
+                    aria-label={t('settings.moveUp', { name: shown })}
+                    title={t('settings.moveUp', { name: shown })}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    className="link move-button"
+                    disabled={index === medicines.length - 1}
+                    onClick={() => onMove(m.id, 1)}
+                    aria-label={t('settings.moveDown', { name: shown })}
+                    title={t('settings.moveDown', { name: shown })}
+                  >
+                    ▼
+                  </button>
                   <button className="link" onClick={() => setEditingId(m.id)}>
                     {t('history.edit')}
                   </button>

@@ -1,5 +1,6 @@
 import { TREND_FUTURE_HOURS, TREND_PAST_HOURS, markPoints, trendSeries } from '../forecast.ts'
 import { useI18n } from '../i18n/useI18n.ts'
+import { monotonePath } from '../smoothPath.ts'
 import type { PressureForecast } from '../weather.ts'
 
 // 表示幅に近い座標系にして、文字が小さくなりすぎないようにする
@@ -26,7 +27,7 @@ export function PressureSparkline({ forecast, now }: { forecast: PressureForecas
   const span = TREND_PAST_HOURS + TREND_FUTURE_HOURS
   const x = (hours: number) => PAD_X + ((hours + TREND_PAST_HOURS) / span) * (W - PAD_X * 2)
   const y = (hpa: number) => PAD_TOP + ((mid + half - hpa) / (half * 2)) * (H - PAD_TOP - PAD_BOTTOM)
-  const line = (ps: typeof points) => ps.map((p) => `${x(p.hours).toFixed(1)},${y(p.hpa).toFixed(1)}`).join(' ')
+  const line = (ps: typeof points) => monotonePath(ps.map((p) => ({ x: x(p.hours), y: y(p.hpa) })))
   const past = points.filter((p) => p.hours <= 0)
   const future = points.filter((p) => p.hours >= 0)
   const label = (hours: number) => (hours === 0 ? t('spark.now') : `${hours > 0 ? '+' : ''}${hours}h`)
@@ -35,8 +36,8 @@ export function PressureSparkline({ forecast, now }: { forecast: PressureForecas
     <svg className="spark" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('spark.aria')}>
       {/* 「今」の位置の縦線 */}
       <line x1={x(0)} x2={x(0)} y1={PAD_TOP - 6} y2={H - PAD_BOTTOM + 2} className="spark-now-line" />
-      {past.length > 1 && <polyline points={line(past)} className="spark-line" />}
-      {future.length > 1 && <polyline points={line(future)} className="spark-line spark-future" />}
+      {past.length > 1 && <path d={line(past)} className="spark-line" />}
+      {future.length > 1 && <path d={line(future)} className="spark-line spark-future" />}
       {markPoints(points).map(({ hours, point }) => (
         <g key={hours}>
           <circle

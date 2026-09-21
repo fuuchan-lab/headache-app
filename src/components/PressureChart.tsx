@@ -241,6 +241,7 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
               <ReferenceLine key={m.id} yAxisId="p" x={m.t} stroke={m.color} strokeDasharray="4 3" strokeOpacity={0.7} />
             ))}
             <Line
+              type="monotone"
               yAxisId="p"
               dataKey="pressure"
               name={pressureName}
@@ -251,6 +252,7 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
               isAnimationActive={false}
             />
             <Line
+              type="monotone"
               yAxisId="l"
               dataKey="level"
               name={t('chart.headache')}

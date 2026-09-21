@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon.ico', 'favicon-16.png', 'favicon-32.png', 'apple-touch-icon.png'],
       manifest: {
-        name: '頭痛と気圧の記録',
-        short_name: '頭痛記録',
+        name: '頭痛ログ',
+        short_name: '頭痛ログ',
         description: '頭痛の度合い・服薬・気圧を記録します',
         lang: 'ja',
         display: 'standalone',

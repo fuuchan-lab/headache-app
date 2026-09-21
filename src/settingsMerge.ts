@@ -1,11 +1,9 @@
 /** 薬の設定を、端末とドライブの間で合わせる処理。ブラウザ機能に依存しない */
-import type { Medicine } from './settings.ts'
-
-/** 並び順: 作成時刻、同じなら ID。どの端末で合わせても同じ順になる（順番の違いで何度も上書きし合わないため） */
-const byOrder = (a: Medicine, b: Medicine) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+import { compareMedicines, type Medicine } from './settings.ts'
 
 /** 比べる時に使う、内容を一意に表す文字列 */
-const fingerprint = (m: Medicine) => JSON.stringify([m.id, m.name, m.color, m.createdAt, m.updatedAt, !!m.deleted, m.intervalHours ?? null])
+const fingerprint = (m: Medicine) =>
+  JSON.stringify([m.id, m.name, m.color, m.createdAt, m.updatedAt, !!m.deleted, m.intervalHours ?? null, m.order ?? null])
 
 /** 同じ更新時刻で内容が違う時も、どの端末でも同じ方を選べるようにする */
 function pick(a: Medicine, b: Medicine): Medicine {
@@ -23,7 +21,7 @@ export function mergeMedicines(local: Medicine[], remote: Medicine[]): Medicine[
     const cur = byId.get(m.id)
     byId.set(m.id, cur ? pick(cur, m) : m)
   }
-  const all = [...byId.values()].sort(byOrder)
+  const all = [...byId.values()].sort(compareMedicines)
 
   // 同じ名前の薬が複数ある時は、先頭（作成が早い方）だけ残し、他は削除済みにする
   const seen = new Map<string, Medicine>()
@@ -64,6 +62,7 @@ export function parseSettings(text: string): Medicine[] {
         updatedAt: typeof m.updatedAt === 'number' ? m.updatedAt : 0,
         ...(m.deleted ? { deleted: true } : {}),
         ...(typeof m.intervalHours === 'number' && m.intervalHours > 0 ? { intervalHours: m.intervalHours } : {}),
+        ...(typeof m.order === 'number' ? { order: m.order } : {}),
       },
     ]
   })
