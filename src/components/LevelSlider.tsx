@@ -5,22 +5,20 @@ interface Props {
   value: HeadacheLevel
   /** スライダーを動かした・指を離した時に呼ばれる（同じ値でも呼ばれる） */
   onChange: (level: HeadacheLevel) => void
-  /** まだ選択されていない状態（記録前）の表示にする */
-  untouched?: boolean
 }
 
 const LEVELS: HeadacheLevel[] = [0, 1, 2, 3, 4, 5]
 
-export function LevelSlider({ value, onChange, untouched = false }: Props) {
+export function LevelSlider({ value, onChange }: Props) {
   const { t } = useI18n()
   const emit = (el: HTMLInputElement) => onChange(Number(el.value) as HeadacheLevel)
   const label = t(`level.${value}`)
 
   return (
     <div className="slider" style={{ '--c': LEVEL_COLORS[value] } as React.CSSProperties}>
-      <p className={`slider-value ${untouched ? 'untouched' : ''}`}>
-        <span className="slider-num">{untouched ? '–' : value}</span>
-        <span className="slider-label">{untouched ? t('slider.prompt') : label}</span>
+      <p className="slider-value">
+        <span className="slider-num">{value}</span>
+        <span className="slider-label">{label}</span>
       </p>
       <input
         type="range"

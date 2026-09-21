@@ -399,10 +399,6 @@ button.link:disabled {
   color: var(--c);
 }
 
-.slider-value.untouched .slider-num {
-  color: var(--muted);
-}
-
 .slider-label {
   font-size: 1rem;
   font-weight: 600;
