@@ -1,7 +1,7 @@
 /** 気圧の変化に応じたセルフケアのアドバイスの文章（日本語 / English）。ブラウザ機能に依存しない */
 import type { Lang } from './i18n/context.ts'
 
-export interface AdviceItem {
+interface AdviceItem {
   /** 見出し（太字で表示） */
   lead: string
   body: string

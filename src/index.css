@@ -776,6 +776,11 @@ textarea.sticky::placeholder {
 }
 
 /* 言語の選択（設定画面） */
+.chart-loading {
+  /* グラフの読み込み中に、下の画面が動かないよう場所を確保する */
+  min-height: 320px;
+}
+
 .theme-row {
   margin-top: 12px;
 }

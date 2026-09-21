@@ -3,7 +3,7 @@ import type { Lang, TFn } from './i18n/context.ts'
 import { localizeMedicineName } from './medicineNames.ts'
 import type { AppRecord } from './types.ts'
 
-export interface Cell {
+interface Cell {
   value: string | number | Date
   format?: string
   fontWeight?: 'bold'
@@ -14,7 +14,7 @@ export interface Cell {
 }
 
 /** 空のセルは null */
-export type Row = (Cell | null)[]
+type Row = (Cell | null)[]
 
 export interface SheetContent {
   data: Row[]

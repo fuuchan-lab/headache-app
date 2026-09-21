@@ -1,11 +1,10 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Header } from './components/Header.tsx'
 import { HeadacheForm } from './components/HeadacheForm.tsx'
 import type { EditResult } from './components/MedicineEditor.tsx'
 import { HistoryList } from './components/HistoryList.tsx'
 import { MedicationForm } from './components/MedicationForm.tsx'
 import { PressureCard } from './components/PressureCard.tsx'
-import { PressureChart } from './components/PressureChart.tsx'
 import { SettingsPage } from './components/SettingsPage.tsx'
 import { useGoogleAuth } from './hooks/useGoogleAuth.ts'
 import { useI18n } from './i18n/useI18n.ts'
@@ -14,6 +13,9 @@ import { useMedicines } from './hooks/useMedicines.ts'
 import { usePressure } from './hooks/usePressure.ts'
 import { useRecords, type Snapshot } from './hooks/useRecords.ts'
 import { useSync } from './hooks/useSync.ts'
+
+// グラフの部品（recharts）は大きいので別ファイルに分け、画面の他の部分を先に表示する
+const PressureChart = lazy(() => import('./components/PressureChart.tsx').then((m) => ({ default: m.PressureChart })))
 
 export default function App() {
   const { t } = useI18n()
@@ -94,7 +96,9 @@ export default function App() {
             medicines={medicines}
             onSave={(name, tablets, note, photo) => addMedication(name, tablets, note, photo, snapshot())}
           />
-          <PressureChart records={records} medicines={medicines} />
+          <Suspense fallback={<section className="card chart-loading" aria-busy="true" />}>
+            <PressureChart records={records} medicines={medicines} />
+          </Suspense>
           <HistoryList records={records} medicines={medicines} onUpdate={update} onRemove={(r) => void remove(r)} />
         </>
       )}

@@ -1,6 +1,6 @@
 import type { TFn } from './i18n/context.ts'
 
-export interface PressurePoint {
+interface PressurePoint {
   /** epoch ms */
   t: number
   hpa: number
@@ -10,7 +10,7 @@ export interface PressurePoint {
 }
 
 /** 推移グラフ用の、細かい間隔の気圧 */
-export interface FinePoint {
+interface FinePoint {
   /** epoch ms */
   t: number
   hpa: number

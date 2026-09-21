@@ -2,7 +2,7 @@ import type { TFn } from './i18n/context.ts'
 import type { PressureForecast } from './weather.ts'
 
 /** none: 安定 / caution・warning: 下降 / info: 上昇 */
-export type WarningLevel = 'none' | 'caution' | 'warning' | 'info'
+type WarningLevel = 'none' | 'caution' | 'warning' | 'info'
 
 /** 気圧の向き。アドバイスの出し分けに使う */
 export type TrendDirection = 'falling' | 'rising' | 'stable'

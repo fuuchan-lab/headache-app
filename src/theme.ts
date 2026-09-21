@@ -1,7 +1,7 @@
 /** 画面の配色（ライト / ダーク）の選択。「自動」は端末の設定に合わせる */
 export type ThemePreference = 'auto' | 'light' | 'dark'
 
-export const THEME_STORAGE_KEY = 'headache-theme'
+const THEME_STORAGE_KEY = 'headache-theme'
 
 export function parseTheme(value: string | null | undefined): ThemePreference {
   return value === 'light' || value === 'dark' ? value : 'auto'

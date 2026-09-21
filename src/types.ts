@@ -34,7 +34,7 @@ export interface MedicationRecord extends BaseRecord {
 }
 
 /** アプリを開いた時に自動で残す気圧の記録 */
-export interface PressureRecord extends BaseRecord {
+interface PressureRecord extends BaseRecord {
   type: 'pressure'
 }
 

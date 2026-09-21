@@ -29,7 +29,7 @@ export function compareMedicines(a: Medicine, b: Medicine): number {
 }
 
 /** 設定にない薬（自由入力）の色 */
-export const OTHER_COLOR = '#6b7280'
+const OTHER_COLOR = '#6b7280'
 
 /** 薬に選べる色（グラフの錠剤アイコンの色） */
 export const MEDICINE_COLORS = ['#7c3aed', '#db2777', '#ea580c', '#0284c7', '#65a30d', '#0d9488', '#a16207', '#4f46e5']
@@ -105,7 +105,7 @@ export function visibleMedicines(list: Medicine[]): Medicine[] {
 }
 
 /** まだ使われていない色を優先して選ぶ */
-export function nextColor(medicines: Medicine[]): string {
+function nextColor(medicines: Medicine[]): string {
   const live = visibleMedicines(medicines)
   const used = new Set(live.map((m) => m.color))
   return MEDICINE_COLORS.find((c) => !used.has(c)) ?? MEDICINE_COLORS[live.length % MEDICINE_COLORS.length]

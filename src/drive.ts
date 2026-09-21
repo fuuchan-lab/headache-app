@@ -124,7 +124,7 @@ export async function getAccessToken(interactive = true, promptOverride: string 
   return waiter.promise
 }
 
-export async function driveFetch(url: string, init: RequestInit = {}, allowRetry = true): Promise<Response> {
+async function driveFetch(url: string, init: RequestInit = {}, allowRetry = true): Promise<Response> {
   const res = await fetch(url, {
     ...init,
     headers: { ...(init.headers ?? {}), Authorization: `Bearer ${accessToken}` },
