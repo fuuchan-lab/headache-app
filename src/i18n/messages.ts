@@ -5,7 +5,7 @@ export const ja = {
   'common.note': 'メモ',
 
   // ヘッダー・アカウント
-  'header.eyebrow': '頭痛・服薬・気圧の記録帳',
+  'header.eyebrow': '頭痛-気圧-服薬記録簿',
   'header.title': '頭痛ログ',
   'header.openSettings': '設定を開く',
   'header.settings': '設定',
@@ -232,7 +232,7 @@ export const en: Record<MessageKey, string> = {
   'common.close': 'Close',
   'common.note': 'Note',
 
-  'header.eyebrow': 'Headache, medication & pressure log',
+  'header.eyebrow': 'Headache, pressure & medication log',
   'header.title': 'Headache Log',
   'header.openSettings': 'Open settings',
   'header.settings': 'Settings',
