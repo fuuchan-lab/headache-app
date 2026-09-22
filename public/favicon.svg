@@ -10,7 +10,7 @@
       <stop offset="1" stop-color="#0a9ad8"/>
     </linearGradient>
   </defs>
-  <g transform="translate(256 256) scale(1.13) translate(-256 -258)">
+  <g transform="translate(256 256) scale(1.1) translate(-256 -258)">
     <path d="M256 36 L448 136 L448 250 C448 360 370 436 256 480 C142 436 64 360 64 250 L64 136 Z" fill="url(#rim-headache)"/>
     <path d="M256 36 L448 136 L448 250 C448 360 370 436 256 480 C142 436 64 360 64 250 L64 136 Z" transform="translate(256 258) scale(0.88) translate(-256 -258)" fill="url(#face-headache)"/>
     <g transform="translate(256 252) scale(0.62) translate(-273 -261)">
