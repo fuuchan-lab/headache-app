@@ -561,6 +561,13 @@ button.link.move-button {
   opacity: 0.7;
 }
 
+/* 接続中は、「Google」と「接続中」を2行の小さい文字にする */
+.google-text.connected {
+  white-space: pre-line;
+  font-size: 0.66rem;
+  line-height: 1.2;
+}
+
 .google-text {
   min-width: 0;
   overflow: hidden;
@@ -889,14 +896,19 @@ textarea.sticky::placeholder {
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.3em;
+  gap: 10px;
+  min-width: 0;
 }
 
-.brand-icon {
+/* アプリのロゴ。アプリ説明と名前の2行のかたまりの左に置く */
+.brand-logo {
   flex: none;
-  width: 1.15em;
-  height: 1.15em;
-  border-radius: 24%;
+  width: 56px;
+  height: 56px;
+}
+
+.brand-text {
+  min-width: 0;
 }
 
 /* 見出しが長くて折り返した時も、右側のボタン（更新など）は右寄せのまま */

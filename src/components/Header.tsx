@@ -26,12 +26,12 @@ export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Pr
   return (
     <>
       <header className="topbar">
-        <div>
-          <p className="eyebrow">{t('header.eyebrow')}</p>
-          <h1 className="brand">
-            <img className="brand-icon" src="./favicon.svg" alt="" />
-            {t('header.title')}
-          </h1>
+        <div className="brand">
+          <img className="brand-logo" src="./favicon.svg" alt="" />
+          <div className="brand-text">
+            <p className="eyebrow">{t('header.eyebrow')}</p>
+            <h1>{t('header.title')}</h1>
+          </div>
         </div>
         <div className="topbar-actions">
           {view === 'home' ? (
@@ -55,7 +55,7 @@ export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Pr
             >
               {!account?.avatarUrl && <GoogleLogo />}
             </span>
-            <span className="google-text">{label}</span>
+            <span className={`google-text${account && !connecting ? ' connected' : ''}`}>{label}</span>
           </button>
         </div>
       </header>
