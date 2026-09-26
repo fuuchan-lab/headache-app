@@ -1,4 +1,5 @@
 import type { TFn } from './i18n/context.ts'
+import { interpolatePressure, type HourlyPoint } from './pressureAt.ts'
 
 interface PressurePoint {
   /** epoch ms */
@@ -83,6 +84,58 @@ export async function fetchPressure(lat: number, lon: number): Promise<PressureF
     series,
     fine,
   }
+}
+
+const HOUR_MS = 3_600_000
+const DAY_MS = 24 * HOUR_MS
+
+/** 直近の日時は予報用の API（過去92日まで）、それより前は過去データ用の API から取る。取れなければもう一方を試す */
+const FORECAST_API = 'https://api.open-meteo.com/v1/forecast'
+const ARCHIVE_API = 'https://archive-api.open-meteo.com/v1/archive'
+const FORECAST_API_DAYS = 80
+
+/** UTC の日付 (YYYY-MM-DD)。API の日付の範囲指定に使う */
+function utcDay(ts: number): string {
+  return new Date(ts).toISOString().slice(0, 10)
+}
+
+interface HourlyResponse {
+  hourly?: { time: number[]; surface_pressure: (number | null)[] }
+}
+
+async function fetchHourlyPressure(api: string, lat: number, lon: number, ts: number): Promise<HourlyPoint[]> {
+  const params = new URLSearchParams({
+    latitude: lat.toFixed(4),
+    longitude: lon.toFixed(4),
+    hourly: 'surface_pressure',
+    start_date: utcDay(ts - 2 * HOUR_MS),
+    end_date: utcDay(ts + 2 * HOUR_MS),
+    timeformat: 'unixtime',
+    timezone: 'GMT',
+  })
+  const res = await fetch(`${api}?${params}`)
+  if (!res.ok) throw new Error(`pressure-history-failed-${res.status}`)
+  const { hourly } = (await res.json()) as HourlyResponse
+  return hourly ? hourly.time.map((t, i) => ({ t: t * 1000, hpa: hourly.surface_pressure[i] ?? null })) : []
+}
+
+/**
+ * 過去の日時の、その場所の気圧 (hPa) を Open-Meteo の1時間ごとのデータから求める。
+ * どちらの API でもデータが無ければ null。通信に失敗した時は、最後のエラーを投げる。
+ */
+export async function fetchPressureAt(lat: number, lon: number, ts: number, now = Date.now()): Promise<number | null> {
+  const apis = now - ts < FORECAST_API_DAYS * DAY_MS ? [FORECAST_API, ARCHIVE_API] : [ARCHIVE_API, FORECAST_API]
+  let lastError: unknown = null
+  for (const api of apis) {
+    try {
+      const value = interpolatePressure(await fetchHourlyPressure(api, lat, lon, ts), ts)
+      if (value !== null) return value
+    } catch (e) {
+      lastError = e
+    }
+  }
+  if (lastError) throw lastError
+  return null
 }
 
 export interface WeatherView {

@@ -107,8 +107,12 @@ export const ja = {
   'elapsed.m': '{m}分',
 
   // 頭痛の記録
-  'headache.title': '今の頭痛を記録',
-  'headache.selected': '選択した日時: {time}',
+  'headache.title': '頭痛を記録',
+  'when.label': '日時',
+  'when.change': '記録する日時を変更',
+  'when.tapHint': 'タップすると、過去の日時に変更できます',
+  'when.pastNote': '指定した日時の気圧（過去のデータ）を記録します。場所は現在地です。',
+  'when.reset': '現在時刻に戻す',
   'headache.notePlaceholder': '付箋メモ（任意）例: こめかみがズキズキ。グラフに付箋マークが付きます',
   'headache.save': '記録する',
   'headache.saved': '記録しました。履歴から日時や内容を編集できます。',
@@ -331,8 +335,12 @@ export const en: Record<MessageKey, string> = {
   'elapsed.hm': '{h} h {m} min',
   'elapsed.m': '{m} min',
 
-  'headache.title': 'Log your headache now',
-  'headache.selected': 'Selected at: {time}',
+  'headache.title': 'Log your headache',
+  'when.label': 'Date & time',
+  'when.change': 'Change the date and time to record',
+  'when.tapHint': 'Tap to change it to a past date and time',
+  'when.pastNote': 'The pressure at that time (past data) will be recorded. The location is where you are now.',
+  'when.reset': 'Back to now',
   'headache.notePlaceholder':
     'Sticky note (optional), e.g. throbbing at the temples. A note icon appears on the chart',
   'headache.save': 'Save',

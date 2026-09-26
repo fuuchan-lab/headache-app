@@ -5,10 +5,12 @@ import { canonicalMedicineName } from '../medicineNames.ts'
 import type { Medicine } from '../settings.ts'
 import { MedicineFields } from './MedicineFields.tsx'
 import { StickyNoteField } from './StickyNoteField.tsx'
+import { WhenField } from './WhenField.tsx'
 
 interface Props {
   medicines: Medicine[]
-  onSave: (name: string, tablets: number, note: string, photo: Blob | null) => Promise<void>
+  /** ts は記録する日時。指定がなければ、記録する時の現在時刻 */
+  onSave: (name: string, tablets: number, note: string, photo: Blob | null, ts: number) => Promise<void>
 }
 
 export function MedicationForm({ medicines, onSave }: Props) {
@@ -18,7 +20,12 @@ export function MedicationForm({ medicines, onSave }: Props) {
   const [note, setNote] = useState('')
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  /** 過去にさかのぼって記録する日時。null なら指定なし（現在時刻で記録する） */
+  const [customAt, setCustomAt] = useState<number | null>(null)
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  /** 過去の気圧を調べる間は保存に時間がかかる。その間の連続タップで、二重に登録しないための印 */
+  const savingRef = useRef(false)
   const [photoError, setPhotoError] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -45,9 +52,17 @@ export function MedicationForm({ medicines, onSave }: Props) {
   }
 
   const submit = async () => {
-    if (!name.trim()) return
-    await onSave(canonicalMedicineName(name), tablets, note.trim(), photo)
+    if (!name.trim() || savingRef.current) return
+    savingRef.current = true
+    setSaving(true)
+    try {
+      await onSave(canonicalMedicineName(name), tablets, note.trim(), photo, customAt ?? Date.now())
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
     setNote('')
+    setCustomAt(null)
     clearPhoto()
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
@@ -84,7 +99,8 @@ export function MedicationForm({ medicines, onSave }: Props) {
       </div>
       {preview && <img className="preview" src={preview} alt={t('meds.photoAlt')} />}
       {photoError && <p className="error">{t('meds.photoError')}</p>}
-      <button className="primary" disabled={!name.trim()} onClick={submit}>
+      <WhenField value={customAt} onChange={setCustomAt} />
+      <button className="primary" disabled={!name.trim() || saving} onClick={submit}>
         {t('meds.save')}
       </button>
       {saved && <p className="ok">{t('meds.saved')}</p>}

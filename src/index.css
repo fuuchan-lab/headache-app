@@ -561,6 +561,36 @@ button.link.move-button {
   opacity: 0.7;
 }
 
+/* オンラインで Google につながっている間: 縁を緑にして、1秒周期でふわっと光らせる */
+.google-button.google-button-live {
+  border-color: #22c55e;
+  animation: live-glow 1s ease-in-out infinite;
+}
+
+@keyframes live-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.12),
+      0 0 0 0 rgba(34, 197, 94, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.12),
+      0 0 10px 3px rgba(34, 197, 94, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 動きを減らす設定の端末では、点滅させず緑の縁だけにする */
+  .google-button.google-button-live {
+    animation: none;
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.12),
+      0 0 0 2px rgba(34, 197, 94, 0.5);
+  }
+}
+
 /* 接続中は、「Google」と「接続中」を2行の小さい文字にする */
 .google-text.connected {
   white-space: pre-line;
@@ -975,6 +1005,62 @@ textarea.sticky::placeholder {
 
 .interval-color > .field:first-child {
   flex: 1 1 11em;
+}
+
+/* 記録する日時（「記録する」ボタンの上）。透明な日時入力を上に重ね、タップで日時の選択画面を開く */
+.when-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.when-field p {
+  margin: 0;
+}
+
+.when-box {
+  position: relative;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.when-box.custom {
+  border-color: var(--accent);
+}
+
+.when-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.when-time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.when-box .when-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.when-box:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* 気圧が上がりつつある時のお知らせ */

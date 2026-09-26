@@ -13,6 +13,9 @@ import { useMedicines } from './hooks/useMedicines.ts'
 import { usePressure } from './hooks/usePressure.ts'
 import { useRecords, type Snapshot } from './hooks/useRecords.ts'
 import { useSync } from './hooks/useSync.ts'
+import { NEAR_NOW_MS, SUBSTITUTE_MS } from './pressureAt.ts'
+import { raceTimeout } from './timeout.ts'
+import { fetchPressureAt } from './weather.ts'
 
 // グラフの部品（recharts）は大きいので別ファイルに分け、画面の他の部分を先に表示する
 const PressureChart = lazy(() => import('./components/PressureChart.tsx').then((m) => ({ default: m.PressureChart })))
@@ -58,6 +61,26 @@ export default function App() {
     lon: pressure.position?.lon ?? null,
   })
 
+  /**
+   * 記録の日時に合わせた気圧・場所。いまの日時ならいまの気圧を付ける。
+   * さかのぼって記録する時は、場所は現在地のまま、その日時の過去の気圧を調べて付ける。
+   */
+  const snapshotAt = async (ts: number): Promise<Snapshot> => {
+    const now = snapshot()
+    const age = Date.now() - ts
+    if (Math.abs(age) < NEAR_NOW_MS) return now
+    // 過去の気圧は、いまの気圧では代われない。調べられない時は気圧なしで記録する
+    const fallback: Snapshot = { ...now, pressure: age < SUBSTITUTE_MS ? now.pressure : null }
+    if (now.lat === null || now.lon === null) return fallback
+    try {
+      const past = await raceTimeout(fetchPressureAt(now.lat, now.lon, ts), 10_000, () => new Error('pressure-history-timeout'))
+      return past === null ? fallback : { ...now, pressure: past }
+    } catch (e) {
+      console.error('[pressure:history]', e)
+      return fallback
+    }
+  }
+
   return (
     <main className="app">
       <Header
@@ -90,11 +113,13 @@ export default function App() {
           <PressureCard pressure={pressure} records={records} medicines={medicines} />
           <HeadacheForm
             pressure={pressure.forecast?.current ?? null}
-            onSave={(level, note, ts) => addHeadache(level, note, ts, snapshot())}
+            onSave={async (level, note, ts) => addHeadache(level, note, ts, await snapshotAt(ts))}
           />
           <MedicationForm
             medicines={medicines}
-            onSave={(name, tablets, note, photo) => addMedication(name, tablets, note, photo, snapshot())}
+            onSave={async (name, tablets, note, photo, ts) =>
+              addMedication(name, tablets, note, photo, ts, await snapshotAt(ts))
+            }
           />
           <Suspense fallback={<section className="card chart-loading" aria-busy="true" />}>
             <PressureChart records={records} medicines={medicines} />

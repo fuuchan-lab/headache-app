@@ -37,6 +37,18 @@ export function formatDateTime(ts: number, lang: Lang): string {
   })
 }
 
+/** 記録する日時の表示。去年以前の日時には年も付ける */
+export function formatWhen(ts: number, lang: Lang, now = Date.now()): string {
+  return new Date(ts).toLocaleString(LOCALES[lang], {
+    ...(new Date(ts).getFullYear() === new Date(now).getFullYear() ? {} : { year: 'numeric' }),
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 /** 記録の見出し。頭痛なら「頭痛 3（痛い）」、服薬なら「ロキソニン 1錠」 */
 export function recordTitle(r: HeadacheRecord | MedicationRecord, t: TFn, lang: Lang): string {
   if (r.type === 'headache') return t('history.headache', { level: r.level, label: t(`level.${r.level}`) })

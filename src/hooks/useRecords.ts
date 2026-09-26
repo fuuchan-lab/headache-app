@@ -42,14 +42,14 @@ export function useRecords() {
   )
 
   const addMedication = useCallback(
-    async (name: string, tablets: number, note: string, photo: Blob | null, snap: Snapshot) => {
+    async (name: string, tablets: number, note: string, photo: Blob | null, ts: number, snap: Snapshot) => {
       let photoId: string | null = null
       if (photo) {
         photoId = crypto.randomUUID()
         await putPhoto({ id: photoId, blob: photo, synced: false })
       }
       const record: MedicationRecord = {
-        ...stamps(Date.now()),
+        ...stamps(ts),
         type: 'medication',
         name,
         tablets,

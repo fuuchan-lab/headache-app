@@ -3,6 +3,7 @@ import type { GoogleAuth } from '../hooks/useGoogleAuth.ts'
 import type { SyncState } from '../hooks/useSync.ts'
 import { LOCALES, type TFn } from '../i18n/context.ts'
 import { useI18n } from '../i18n/useI18n.ts'
+import { useOnline } from '../hooks/useOnline.ts'
 import { GearIcon } from './GearIcon.tsx'
 import { GoogleLogo } from './GoogleLogo.tsx'
 import { driveConfig } from '../drive.ts'
@@ -20,6 +21,9 @@ export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Pr
   const { t } = useI18n()
   const { account, connecting, login } = auth
   const [accountOpen, setAccountOpen] = useState(false)
+  const online = useOnline()
+  // オンラインで Google につながっている間は、ボタンの縁を緑にして、ゆっくり光らせる
+  const live = account !== null && !connecting && online
 
   const label = connecting ? t('google.connecting') : account ? t('google.connected') : t('google.login')
 
@@ -44,7 +48,7 @@ export function Header({ view, onToggleSettings, auth, sync, unsyncedCount }: Pr
             </button>
           )}
           <button
-            className="google-button"
+            className={`google-button${live ? ' google-button-live' : ''}`}
             disabled={connecting}
             onClick={() => (account ? setAccountOpen(true) : void login())}
           >
