@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
+import { AdBanner } from './components/AdBanner.tsx'
 import { Header } from './components/Header.tsx'
 import { HeadacheForm } from './components/HeadacheForm.tsx'
 import type { EditResult } from './components/MedicineEditor.tsx'
@@ -127,6 +128,7 @@ export default function App() {
           <HistoryList records={records} medicines={medicines} onUpdate={update} onRemove={(r) => void remove(r)} />
         </>
       )}
+      <AdBanner />
     </main>
   )
 }
