@@ -18,11 +18,9 @@ function stamps(ts: number) {
 export function useRecords() {
   /** 削除済みを含む全記録。同期の対象 */
   const [all, setAll] = useState<AppRecord[]>([])
-  const [loaded, setLoaded] = useState(false)
 
   const reload = useCallback(async () => {
     setAll(await getAllRecords())
-    setLoaded(true)
   }, [])
 
   useEffect(() => {
@@ -104,5 +102,5 @@ export function useRecords() {
     [reload],
   )
 
-  return { records, loaded, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, renameMedication, remove }
+  return { records, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, renameMedication, remove }
 }

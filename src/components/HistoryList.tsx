@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { formatDateTime, tabletsLabel } from '../format.ts'
 import { useI18n } from '../i18n/useI18n.ts'
 import { localizeMedicineName } from '../medicineNames.ts'
@@ -19,9 +19,10 @@ export function HistoryList({ records, medicines, onUpdate, onRemove }: Props) {
   const { t, lang } = useI18n()
   const [editingId, setEditingId] = useState<string | null>(null)
   // 気圧だけの自動記録は履歴に出さない（グラフで確認できる）
-  const items = records
-    .filter((r): r is HeadacheRecord | MedicationRecord => r.type !== 'pressure')
-    .slice(0, 50)
+  const items = useMemo(
+    () => records.filter((r): r is HeadacheRecord | MedicationRecord => r.type !== 'pressure').slice(0, 50),
+    [records],
+  )
 
   return (
     <section className="card">
