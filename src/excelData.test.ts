@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { exportFileName, pressureSheet, recordsSheet } from './excelData.ts'
+import { exportFileName, exportPackageName, pressureSheet, recordsSheet } from './excelData.ts'
 import { buildWorkbook } from './excelWorkbook.ts'
 import { translate, type TFn } from './i18n/context.ts'
 import type { AppRecord } from './types.ts'
@@ -36,10 +36,16 @@ const records: AppRecord[] = [
   },
 ]
 
-test('exportFileName は Headache_YYYYMMDD-HH:MM.xlsx の形式（ローカル時刻）', () => {
-  assert.equal(exportFileName(new Date(2026, 8, 21, 0, 15)), 'Headache_20260921-00:15.xlsx')
-  assert.equal(exportFileName(new Date(2026, 0, 5, 9, 7)), 'Headache_20260105-09:07.xlsx')
-  assert.equal(exportFileName(new Date(2026, 11, 31, 23, 59)), 'Headache_20261231-23:59.xlsx')
+test('exportFileName は Headache_YYYYMMDD-HHMM.xlsx の形式（ローカル時刻。: は使わない）', () => {
+  assert.equal(exportFileName(new Date(2026, 8, 21, 0, 15)), 'Headache_20260921-0015.xlsx')
+  assert.equal(exportFileName(new Date(2026, 0, 5, 9, 7)), 'Headache_20260105-0907.xlsx')
+  assert.equal(exportFileName(new Date(2026, 11, 31, 23, 59)), 'Headache_20261231-2359.xlsx')
+})
+
+test('exportPackageName は、フォルダー名・ZIP名に使う Headache_YYYYMMDD-HHMM（Excel 名から拡張子を除いたもの）', () => {
+  const d = new Date(2026, 8, 21, 0, 15)
+  assert.equal(exportPackageName(d), 'Headache_20260921-0015')
+  assert.equal(`${exportPackageName(d)}.xlsx`, exportFileName(d))
 })
 
 test('recordsSheet は見出し行のあと、頭痛と服薬を古い順に並べ、気圧ログと削除済みは含めない', () => {

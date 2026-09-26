@@ -213,6 +213,28 @@ export interface DriveFile {
   modifiedTime: string
 }
 
+/**
+ * 指定した親フォルダーの中に、名前のフォルダーを探す。無ければ作る。
+ * 書き出し（Excel・写真・JSONデータ）を、1つのフォルダーにまとめるのに使う
+ */
+export async function ensureSubfolder(parentId: string, name: string): Promise<string> {
+  const escaped = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+  const q = encodeURIComponent(
+    `name='${escaped}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`,
+  )
+  const list = await driveFetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&orderBy=createdTime&spaces=drive`,
+  )
+  const { files } = (await list.json()) as { files?: { id: string }[] }
+  if (files && files.length > 0) return files[0].id
+  const created = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] }),
+  })
+  return ((await created.json()) as { id: string }).id
+}
+
 /** フォルダー内のファイルを全件取得する */
 export async function listFolderFiles(folderId: string): Promise<DriveFile[]> {
   const q = encodeURIComponent(`'${folderId}' in parents and trashed=false`)

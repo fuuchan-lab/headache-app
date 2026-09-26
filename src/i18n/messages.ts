@@ -203,10 +203,12 @@ export const ja = {
 
   // Excel エクスポート
   'export.title': 'データのエクスポート',
-  'export.help': '記録の一覧を Excel ファイルにして、Google ドライブの「{folder}」フォルダーに保存します。',
-  'export.button': 'Excelエクスポート',
+  'export.help':
+    '記録を Excel ファイル・服薬の写真・データ（JSON）にして、まとめて書き出します。Google ドライブの「{folder}」フォルダーに、書き出しごとのフォルダーを作って保存するか、この端末に ZIP でダウンロードできます。',
+  'export.button': 'Google ドライブに保存',
+  'export.download': 'この端末にダウンロード（ZIP）',
   'export.busy': '書き出し中…',
-  'export.needLogin': 'Google にログインすると使えます（右上の「ログイン」）。',
+  'export.needLogin': 'Google ドライブに保存するには、ログインしてください（右上の「ログイン」）。',
   'export.noRecords': '書き出す記録がまだありません。',
   'export.done': '保存しました: {name}',
   'export.open': 'Google ドライブで開く',
@@ -427,10 +429,12 @@ export const en: Record<MessageKey, string> = {
   'settings.theme.dark': 'Dark',
 
   'export.title': 'Export data',
-  'export.help': 'Saves your records as an Excel file in the "{folder}" folder in Google Drive.',
-  'export.button': 'Export to Excel',
+  'export.help':
+    'Bundles your records as an Excel file, medicine photos and data (JSON). Save it to a new folder inside the "{folder}" folder in Google Drive, or download it to this device as a ZIP.',
+  'export.button': 'Save to Google Drive',
+  'export.download': 'Download to this device (ZIP)',
   'export.busy': 'Exporting…',
-  'export.needLogin': 'Log in with Google to use this (the "Log in" button at the top right).',
+  'export.needLogin': 'Log in with Google to save to Google Drive (the "Log in" button at the top right).',
   'export.noRecords': 'There are no records to export yet.',
   'export.done': 'Saved: {name}',
   'export.open': 'Open in Google Drive',

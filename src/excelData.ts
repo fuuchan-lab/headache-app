@@ -135,8 +135,17 @@ export function pressureSheet(records: AppRecord[], t: TFn): SheetContent {
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
-/** 書き出すファイルの名前。例: Headache_20260921-00:15.xlsx（端末のローカル時刻） */
+/** ファイル名に使う日時。例: 20260921-0015（端末のローカル時刻。Windows のファイル名に使えない : は入れない） */
+function timestamp(d: Date): string {
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`
+}
+
+/** 書き出す Excel のファイル名。例: Headache_20260921-0015.xlsx */
 export function exportFileName(d: Date): string {
-  const date = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`
-  return `Headache_${date}-${pad(d.getHours())}:${pad(d.getMinutes())}.xlsx`
+  return `Headache_${timestamp(d)}.xlsx`
+}
+
+/** 書き出し（Excel・写真・JSONデータ）をまとめる、ドライブのフォルダー名・ZIP のファイル名（拡張子なし）。例: Headache_20260921-0015 */
+export function exportPackageName(d: Date): string {
+  return `Headache_${timestamp(d)}`
 }

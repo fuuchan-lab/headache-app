@@ -15,6 +15,8 @@ export function monthOf(r: { createdAt: number }): string {
 
 export const monthFileName = (month: string) => `records-${month}.json`
 export const photoFileName = (id: string) => `photo-${id}.jpg`
+/** 書き出し（Excel・写真・データ）の中の、記録のデータ。ドライブの月別ファイルと同じ形式 */
+export const PACKAGE_DATA_FILE = 'headache-data.json'
 
 export function toRemote(r: AppRecord): RemoteRecord {
   const { synced: _synced, ...rest } = r

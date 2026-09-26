@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { driveConfig } from '../drive.ts'
+import { describeError } from '../errors.ts'
 import type { Lang } from '../i18n/context.ts'
 import { useI18n } from '../i18n/useI18n.ts'
 import { localizeMedicineName } from '../medicineNames.ts'
@@ -19,15 +20,15 @@ interface Props {
   onMove: (id: string, direction: -1 | 1) => void
   /** 書き出す記録（削除済みを除く） */
   records: AppRecord[]
-  /** Google にログインしているか（Excel は Google ドライブに保存するため必要） */
+  /** Google にログインしているか（Google ドライブへの保存に必要。端末へのダウンロードはログインなしでも使える） */
   loggedIn: boolean
 }
 
 type ExportState =
   | { status: 'idle' }
   | { status: 'busy' }
-  | { status: 'done'; name: string; id: string }
-  | { status: 'error' }
+  | { status: 'done'; name: string; id?: string; isFolder?: boolean }
+  | { status: 'error'; detail: string }
 
 export function SettingsPage({ medicines, onAdd, onEdit, onRemove, onMove, records, loggedIn }: Props) {
   const { t, lang, setLang } = useI18n()
@@ -52,16 +53,16 @@ export function SettingsPage({ medicines, onAdd, onEdit, onRemove, onMove, recor
     }
   }
 
-  const runExport = async () => {
+  const runExport = async (to: 'drive' | 'device') => {
     setExp({ status: 'busy' })
     try {
       // Excel 出力のライブラリは、使う時だけ読み込む
-      const { exportToDrive } = await import('../exportExcel.ts')
-      const result = await exportToDrive(records, t, lang)
+      const { exportToDrive, exportToDevice } = await import('../exportExcel.ts')
+      const result = await (to === 'drive' ? exportToDrive : exportToDevice)(records, t, lang)
       setExp({ status: 'done', ...result })
     } catch (e) {
       console.error('[export]', e)
-      setExp({ status: 'error' })
+      setExp({ status: 'error', detail: describeError(e) })
     }
   }
 
@@ -181,26 +182,53 @@ export function SettingsPage({ medicines, onAdd, onEdit, onRemove, onMove, recor
       <section className="card">
         <h2>{t('export.title')}</h2>
         <p className="muted">{t('export.help', { folder: driveConfig.folderName })}</p>
-        <button
-          className="primary"
-          disabled={!loggedIn || noRecords || exp.status === 'busy'}
-          onClick={() => void runExport()}
-        >
-          {exp.status === 'busy' ? t('export.busy') : t('export.button')}
-        </button>
+        <div className="export-buttons">
+          <button
+            className="primary"
+            disabled={!loggedIn || noRecords || exp.status === 'busy'}
+            onClick={() => void runExport('drive')}
+          >
+            {exp.status === 'busy' ? t('export.busy') : t('export.button')}
+          </button>
+          <button
+            className="secondary"
+            disabled={noRecords || exp.status === 'busy'}
+            onClick={() => void runExport('device')}
+          >
+            {t('export.download')}
+          </button>
+        </div>
         {!loggedIn && <p className="muted">{t('export.needLogin')}</p>}
-        {loggedIn && noRecords && <p className="muted">{t('export.noRecords')}</p>}
+        {noRecords && <p className="muted">{t('export.noRecords')}</p>}
         {exp.status === 'done' && (
           <p className="ok" role="status">
             {t('export.done', { name: exp.name })}{' '}
-            <a href={`https://drive.google.com/file/d/${exp.id}/view`} target="_blank" rel="noopener noreferrer">
-              {t('export.open')}
-            </a>
+            {exp.id && (
+              <a
+                href={
+                  exp.isFolder
+                    ? `https://drive.google.com/drive/folders/${exp.id}`
+                    : `https://drive.google.com/file/d/${exp.id}/view`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t('export.open')}
+              </a>
+            )}
           </p>
         )}
         {exp.status === 'error' && (
           <p className="error" role="alert">
             {t('export.failed')}
+            {exp.detail && (
+              <>
+                <br />
+                <span className="small muted">
+                  {t('err.detail')}: {exp.detail}
+                </span>
+              </>
+            )}
           </p>
         )}
       </section>

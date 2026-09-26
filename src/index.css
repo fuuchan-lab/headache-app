@@ -1007,6 +1007,17 @@ textarea.sticky::placeholder {
   flex: 1 1 11em;
 }
 
+/* データのエクスポート: ドライブに保存・端末にダウンロードのボタンを並べる */
+.export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.export-buttons button {
+  flex: 1 1 auto;
+}
+
 /* 記録する日時（「記録する」ボタンの上）。透明な日時入力を上に重ね、タップで日時の選択画面を開く */
 .when-field {
   display: flex;
