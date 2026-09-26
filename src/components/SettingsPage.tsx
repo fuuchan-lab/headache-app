@@ -70,6 +70,17 @@ export function SettingsPage({ medicines, onAdd, onEdit, onRemove, onMove, recor
 
   return (
     <>
+      <a className="card help-card" href={`./help.html?lang=${lang}`} target="_blank" rel="noopener">
+        <span className="help-mark" aria-hidden="true">
+          ?
+        </span>
+        <span>
+          <strong>{t('help.title')}</strong>
+          <br />
+          <span className="muted small">{t('help.subtitle')}</span>
+        </span>
+      </a>
+
       <section className="card">
         <div className="row">
           <h2>{t('settings.language')}</h2>

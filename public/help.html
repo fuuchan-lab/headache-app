@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ヘルプ / Help — 頭痛ログ</title>
+    <link rel="icon" href="./favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" sizes="any" />
+    <style>
+      :root {
+        --bg: #f4f7f6;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --accent: #0f766e;
+        --tip-bg: #ecfdf5;
+        --tip-text: #065f46;
+        --note-bg: #fef9c3;
+        --note-text: #854d0e;
+        color-scheme: light dark;
+      }
+      /* アプリの設定で選んだ配色（ライト/ダーク）に合わせる。自動の時は端末の設定に従う。
+         ダークの色は2か所に同じものを書く必要があるので、変えるときは両方そろえる */
+      :root[data-theme='light'] {
+        color-scheme: light;
+      }
+      :root[data-theme='dark'] {
+        color-scheme: dark;
+        --bg: #0f172a;
+        --card: #1e293b;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --border: #334155;
+        --accent: #2dd4bf;
+        --tip-bg: #052e16;
+        --tip-text: #bbf7d0;
+        --note-bg: #422006;
+        --note-text: #fde68a;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme]) {
+          --bg: #0f172a;
+          --card: #1e293b;
+          --text: #e5e7eb;
+          --muted: #94a3b8;
+          --border: #334155;
+          --accent: #2dd4bf;
+          --tip-bg: #052e16;
+          --tip-text: #bbf7d0;
+          --note-bg: #422006;
+          --note-text: #fde68a;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+        line-height: 1.75;
+        overflow-wrap: anywhere;
+      }
+      main { max-width: 760px; margin: 0 auto; padding: 20px 16px 64px; }
+      header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+      header img { width: 56px; height: 56px; border-radius: 14px; }
+      h1 { font-size: 1.5rem; margin: 0; line-height: 1.3; }
+      .lang-switch { margin: 8px 0 16px; font-size: 0.95rem; }
+      .lang-switch a { color: var(--accent); }
+      nav.toc, section {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 6px 18px 14px;
+        margin-bottom: 16px;
+      }
+      nav.toc ol { padding-left: 1.4em; margin: 6px 0; }
+      nav.toc a, section a { color: var(--accent); }
+      h2 { font-size: 1.2rem; margin: 14px 0 6px; }
+      h3 { font-size: 1rem; margin: 14px 0 4px; }
+      p, li { margin: 4px 0; }
+      ul, ol { padding-left: 1.4em; }
+      .tip, .note { border-radius: 10px; padding: 8px 12px; margin: 10px 0; }
+      .tip { background: var(--tip-bg); color: var(--tip-text); }
+      .note { background: var(--note-bg); color: var(--note-text); }
+      kbd {
+        display: inline-block;
+        padding: 0 6px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg);
+        font: inherit;
+        font-size: 0.9em;
+        white-space: nowrap;
+      }
+      table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+      th, td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; vertical-align: top; }
+      /* 選んだ言語のヘルプだけを表示する（下のスクリプトで切り替える） */
+      [hidden] { display: none !important; }
+      .back { display: inline-block; margin-top: 8px; }
+    </style>
+    <script>
+      // 選んだ配色を、画面が描かれる前に反映する（ちらつき防止）。詳しい処理は src/theme.ts
+      try {
+        var theme = localStorage.getItem('headache-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <main>
+      <div id="ja" lang="ja">
+        <header>
+          <img src="./icon-192.png" alt="" />
+          <div>
+            <div style="color: var(--muted); font-size: 0.85rem">頭痛-気圧-服薬記録簿</div>
+            <h1>頭痛ログ ヘルプ</h1>
+          </div>
+        </header>
+        <p class="lang-switch">English: <a href="?lang=en">Help in English</a></p>
+
+        <nav class="toc" aria-label="目次">
+          <h2>目次</h2>
+          <ol>
+            <li><a href="#ja-start">はじめに（最初の準備）</a></li>
+            <li><a href="#ja-headache">頭痛を記録する</a></li>
+            <li><a href="#ja-meds">服薬を記録する</a></li>
+            <li><a href="#ja-pressure">気圧・天気の見方</a></li>
+            <li><a href="#ja-chart">グラフの見方</a></li>
+            <li><a href="#ja-history">履歴を見る・直す・消す</a></li>
+            <li><a href="#ja-settings">設定（薬・言語・配色）</a></li>
+            <li><a href="#ja-sync">Google 同期・複数の端末・オフライン</a></li>
+            <li><a href="#ja-export">データのエクスポート</a></li>
+            <li><a href="#ja-trouble">困ったとき</a></li>
+          </ol>
+        </nav>
+
+        <section id="ja-start">
+          <h2>1. はじめに（最初の準備）</h2>
+          <h3>① アプリを開く・ホーム画面に置く</h3>
+          <p>
+            スマホのブラウザ（iPhone は Safari、Android は Chrome）で
+            <a href="https://headache.doitmyself.net/">https://headache.doitmyself.net/</a> を開きます。
+            iPhone は共有ボタン →「ホーム画面に追加」、Android はメニュー →「ホーム画面に追加」（アプリをインストール）で、アプリと同じように使えます。
+          </p>
+          <h3>② 位置情報を許可する</h3>
+          <p>
+            現在地の気圧・天気を調べるために、位置情報を使います。最初に許可を求められたら「許可」を選んでください。
+            位置情報は、気圧を調べる時と、記録に気圧を付ける時にだけ使います。許可しなくても記録はできますが、気圧は付きません。
+          </p>
+          <h3>③ Google にログインする（任意）</h3>
+          <p>
+            右上の <kbd>ログイン</kbd> を押して Google アカウントでログインすると、記録が自分の Google ドライブに保存され、機種変更や複数の端末でも同じ記録を使えます。
+            確認画面では「Google ドライブのファイル…」にチェックを入れて「続行」を押してください。
+            ログインできると、ボタンの縁が<strong>緑色にふわっと光ります</strong>（オンラインで同期できる状態）。
+            ログインしなくても、記録はこの端末に保存されます。
+          </p>
+          <h3>④ 薬を設定する（任意）</h3>
+          <p><kbd>⚙ 設定</kbd> →「薬の設定」で、よく飲む薬を追加しておくと、服薬を記録する時に選べます（<a href="#ja-settings">設定</a>を参照）。</p>
+          <p class="tip">頭痛が起きた時にすぐ記録できるよう、ホーム画面に置いておくのがおすすめです。</p>
+        </section>
+
+        <section id="ja-headache">
+          <h2>2. 頭痛を記録する</h2>
+          <ol>
+            <li>ホーム画面の「頭痛を記録」で、スライダーを動かして頭痛の度合いを選びます。</li>
+            <li>必要なら、付箋メモ（例: こめかみがズキズキ）を書きます。メモのある記録は、グラフに付箋マークが付きます。</li>
+            <li><kbd>記録する</kbd> を押します。</li>
+          </ol>
+          <table>
+            <tr><th>0</th><td>なし</td></tr>
+            <tr><th>1</th><td>軽い</td></tr>
+            <tr><th>2</th><td>やや痛い</td></tr>
+            <tr><th>3</th><td>痛い</td></tr>
+            <tr><th>4</th><td>かなり痛い</td></tr>
+            <tr><th>5</th><td>耐えられない</td></tr>
+          </table>
+          <h3>あとから記録する（過去の日時にする）</h3>
+          <p>
+            「記録する」ボタンの上の日時欄（「日時」）をタップすると、記録する日時を過去に変えられます（未来は選べません）。
+            <kbd>現在時刻に戻す</kbd> で元に戻ります。
+            過去の日時で記録した場合は、その日時の気圧（過去のデータ）を調べて付けます。場所は、いまいる場所です。
+          </p>
+          <p class="note">気圧は、記録した時に開いていたアプリが取得した値を付けます。気圧・場所が取れない時は、その情報なしで保存します。</p>
+        </section>
+
+        <section id="ja-meds">
+          <h2>3. 服薬を記録する</h2>
+          <ol>
+            <li>「服薬を記録」で、飲んだ<strong>薬</strong>と<strong>錠数</strong>（0.5錠〜6錠）を選びます。</li>
+            <li>一覧にない薬は、「その他（入力する）」を選んで名前を入力します。</li>
+            <li>必要なら、付箋メモを書いたり、<kbd>📷 写真を撮る／選ぶ</kbd> で薬の写真を付けたりします。</li>
+            <li><kbd>服薬を記録する</kbd> を押します。</li>
+          </ol>
+          <p>頭痛と同じく、日時欄をタップして過去の日時で記録することもできます。</p>
+          <h3>最後に飲んでからの時間・次に飲めるまで</h3>
+          <p>
+            気圧のカードに、<strong>最後に服薬してからの経過時間</strong>が出ます。
+            薬に服薬間隔（例: 6時間）を設定している場合は、<strong>次に飲めるまでの残り時間</strong>も出ます。
+          </p>
+          <p class="note">設定した服薬間隔をもとにした目安です。服薬は、医師・薬剤師の指示に従ってください。</p>
+        </section>
+
+        <section id="ja-pressure">
+          <h2>4. 気圧・天気の見方</h2>
+          <p>ホーム画面の上の「現在地の気圧」のカードには、いまの場所（都道府県・市区町村）の次の情報が出ます。</p>
+          <ul>
+            <li><strong>気圧（hPa）</strong>・天気・気温・湿度・不快指数</li>
+            <li><strong>気圧の推移</strong>のグラフ（直前6時間〜今後12時間、2時間ごとに数値）。<strong>実線が実績、破線が予報</strong>です。</li>
+            <li>気圧が下がりそうな時の<strong>お知らせ</strong>（「気圧が急に下がる見込みです」など）と、ここ3時間の変化</li>
+          </ul>
+          <p><kbd>更新</kbd> を押すと、最新の気圧を取り直します。アプリを開くたびに（画面に戻った時も）、その場所の気圧を自動で記録します。</p>
+          <h3>アドバイス</h3>
+          <p>
+            <kbd>アドバイス</kbd> を押すと、気圧の<strong>下降・上昇</strong>に応じたセルフケアのアドバイスが出ます（上のタブで切り替え）。
+            一般的な情報です。強い痛みや、いつもと違う症状があるときは、医療機関に相談してください。
+          </p>
+        </section>
+
+        <section id="ja-chart">
+          <h2>5. グラフの見方</h2>
+          <p>「気圧と頭痛の推移」のグラフに、<strong>気圧・頭痛・服薬</strong>が同じ時間軸で重なって表示されます。頭痛と気圧の関係を見るためのグラフです。</p>
+          <ul>
+            <li><strong>緑の線</strong>: 気圧（hPa・左の軸）</li>
+            <li><strong>赤い線と丸</strong>: 頭痛（0〜5・右の軸。丸の色は度合いで変わります）</li>
+            <li><strong>錠剤のアイコン</strong>: 服薬（錠数分が重なって表示。0.5錠は半分）</li>
+            <li><strong>付箋マーク</strong>: メモのある記録</li>
+          </ul>
+          <h3>操作</h3>
+          <ul>
+            <li>期間の切り替え: <kbd>全体</kbd>（記録の量に合わせて自動）・<kbd>6時間</kbd>・<kbd>1日</kbd>・<kbd>3日</kbd>・<kbd>7日</kbd>・<kbd>30日</kbd></li>
+            <li>拡大・縮小: <kbd>＋</kbd> / <kbd>－</kbd> ボタン、または2本指のピンチ</li>
+            <li>移動: グラフをドラッグ</li>
+            <li>丸・錠剤・付箋マークをタップすると、その記録の<strong>詳細（付箋メモ・写真）</strong>がポップアップで開きます。</li>
+          </ul>
+        </section>
+
+        <section id="ja-history">
+          <h2>6. 履歴を見る・直す・消す</h2>
+          <p>ホーム画面の下の「履歴」に、記録が新しい順に並びます。</p>
+          <ul>
+            <li><kbd>編集</kbd>: 日時・頭痛の度合い（薬・錠数）・付箋メモを直せます。</li>
+            <li><kbd>削除</kbd>: 確認のあと、その記録を消します。ログイン中は、Google ドライブと他の端末からも消えます。</li>
+          </ul>
+        </section>
+
+        <section id="ja-settings">
+          <h2>7. 設定（薬・言語・配色）</h2>
+          <p>右上の <kbd>⚙</kbd> で設定を開き、<kbd>戻る</kbd> でホームに戻ります。</p>
+          <h3>薬の設定</h3>
+          <ul>
+            <li><strong>追加</strong>: 名前を入れて <kbd>追加</kbd>（例: イブ）。</li>
+            <li><strong>編集</strong>: 名前・色・服薬間隔（0.5〜72時間。空欄でもよい）を変えられます。名前を変えると、過去の記録の薬名も新しい名前に変わります。色は、グラフの錠剤アイコンの色になります。</li>
+            <li><strong>並べ替え</strong>: <kbd>▲</kbd> <kbd>▼</kbd> で順番を入れ替えます（服薬を記録する時の選択肢の順になります）。</li>
+            <li><strong>削除</strong>: 設定から外します。過去の記録は消えません。</li>
+          </ul>
+          <h3>言語・画面の配色</h3>
+          <p>日本語 / English を切り替えられます（初回は端末の言語に合わせます）。配色は「自動（端末の設定に合わせる）」「ライト」「ダーク」から選べます。</p>
+        </section>
+
+        <section id="ja-sync">
+          <h2>8. Google 同期・複数の端末・オフライン</h2>
+          <ul>
+            <li>ログインすると、記録（月ごとのデータ）・薬の設定・写真が、Google ドライブの専用フォルダー<strong>「Headache_Log」</strong>に保存されます。アプリが作ったファイルだけを扱い、ほかのファイルは見ません。</li>
+            <li>同じ Google アカウントでログインした<strong>別の端末</strong>にも、同じ記録が出ます。同じ記録を別々に直した場合は、更新の新しい方が使われます。</li>
+            <li><strong>電波がない場所でも記録できます。</strong>記録はこの端末に保存され、ネットにつながると自動で Google ドライブに同期します（気圧・場所が取れない時は、その情報なしで保存）。</li>
+            <li>右上のボタンを押すと、ログイン中のアカウントや同期の状態が見られ、<kbd>今すぐ同期</kbd>・<kbd>アカウントを切り替え</kbd>・<kbd>ログアウト</kbd>ができます。</li>
+            <li>電波なしでアプリを開いても、ログイン状態は保たれます（初回だけは、ネットにつないで開いてください）。</li>
+          </ul>
+        </section>
+
+        <section id="ja-export">
+          <h2>9. データのエクスポート</h2>
+          <p>設定の「データのエクスポート」で、記録を次のファイルにまとめて書き出せます。</p>
+          <ul>
+            <li><strong>Excel ファイル</strong>（「記録」と「気圧ログ」の2シート）</li>
+            <li><strong>服薬の写真</strong></li>
+            <li><strong>データ（headache-data.json）</strong>: Google ドライブの同期と同じ形式のデータ</li>
+          </ul>
+          <ul>
+            <li><kbd>Google ドライブに保存</kbd>: 「Headache_Log」フォルダーの中に、書き出しごとの <code>Headache_日付-時刻</code> フォルダーを作って保存します（ログインが必要）。</li>
+            <li><kbd>この端末にダウンロード（ZIP）</kbd>: 同じ内容を ZIP ファイルにして、この端末に保存します（ログインなしでも使えます）。</li>
+          </ul>
+          <p class="note">削除した記録は、書き出しに含まれません。</p>
+        </section>
+
+        <section id="ja-trouble">
+          <h2>10. 困ったとき</h2>
+          <h3>ログインできない</h3>
+          <ul>
+            <li>他のアプリ（LINE、メールなど）の中で開いている場合は、ログインや位置情報が使えないことがあります。Safari（iPhone）や Chrome（Android）でこのページを直接開いてください。</li>
+            <li>確認画面で「Google ドライブのファイル…」のチェックを外すと、ログインできません。チェックを入れて、もう一度ログインしてください。</li>
+          </ul>
+          <h3>気圧が出ない・位置情報のエラーが出る</h3>
+          <ul>
+            <li>ブラウザの位置情報を「許可」にしてください。アプリの警告の <kbd>設定方法を見る</kbd> で、iPhone・Android・パソコン別の手順が見られます。設定を直したら <kbd>もう一度試す</kbd> を押します。</li>
+            <li>電波が届かない場所では、気圧を取得できません。ネットにつながると自動で取得します。</li>
+            <li>位置情報が取れない時は、前回の位置で気圧を取得します。</li>
+          </ul>
+          <h3>同期されない・別の端末に記録が出ない</h3>
+          <ul>
+            <li>右上のボタンの縁が緑に光っているか（ログイン中でオンラインか）を確認し、ボタンを押して <kbd>今すぐ同期</kbd> を押してください。</li>
+            <li>両方の端末で、同じ Google アカウントにログインしているか確認してください。</li>
+            <li>「未同期の記録」と出ている間の記録は、この端末にあります。ネットにつながると自動で同期します。</li>
+          </ul>
+          <h3>データについて</h3>
+          <p>
+            記録は、あなたの端末と、あなたの Google ドライブにだけ保存されます。運営者が見ることはありません。
+            詳しくは<a href="./privacy.html">プライバシーポリシー</a>をご覧ください。
+            このアプリは記録の整理と閲覧のための道具で、医療上の診断や助言を行うものではありません。
+          </p>
+        </section>
+        <a class="back" href="./">← アプリに戻る</a>
+      </div>
+
+      <div id="en" class="en" lang="en">
+        <header>
+          <img src="./icon-192.png" alt="" />
+          <div>
+            <div style="color: var(--muted); font-size: 0.85rem">Headache · Pressure · Medication Log</div>
+            <h1>Headache Log Help</h1>
+          </div>
+        </header>
+        <p class="lang-switch">日本語: <a href="?lang=ja">日本語のヘルプ</a></p>
+
+        <nav class="toc" aria-label="Contents">
+          <h2>Contents</h2>
+          <ol>
+            <li><a href="#en-start">Getting started</a></li>
+            <li><a href="#en-record">Recording a headache or medication</a></li>
+            <li><a href="#en-pressure">Air pressure and the chart</a></li>
+            <li><a href="#en-manage">History and settings</a></li>
+            <li><a href="#en-sync">Google sync, several devices, offline</a></li>
+            <li><a href="#en-export">Exporting your data</a></li>
+            <li><a href="#en-trouble">Troubleshooting</a></li>
+          </ol>
+        </nav>
+
+        <section id="en-start">
+          <h2>1. Getting started</h2>
+          <ol>
+            <li>
+              Open <a href="https://headache.doitmyself.net/">https://headache.doitmyself.net/</a> in your phone's browser
+              (Safari on iPhone, Chrome on Android). Use "Add to Home Screen" (iPhone: Share button; Android: menu) to use it like an app.
+            </li>
+            <li>
+              <strong>Allow location</strong> when asked. It is used only to look up the air pressure and weather where you are, and to attach the
+              pressure to your records. You can still record without it, but no pressure is attached.
+            </li>
+            <li>
+              <strong>Log in with Google (optional)</strong> with the <kbd>Log in</kbd> button at the top right. Your records are then saved in your own Google Drive
+              and shared between your devices. On the consent screen, tick "See, edit, create and delete only the specific Google Drive files…" and continue.
+              While you are online and logged in, the button's border <strong>glows green</strong>. Without logging in, records stay on this device.
+            </li>
+            <li>Optionally add the medicines you take under <kbd>⚙ Settings</kbd> → medicine settings.</li>
+          </ol>
+        </section>
+
+        <section id="en-record">
+          <h2>2. Recording a headache or medication</h2>
+          <h3>Headache</h3>
+          <ol>
+            <li>In "Log your headache", move the slider (0 = none, 1 = mild, 2 = somewhat painful, 3 = painful, 4 = very painful, 5 = unbearable).</li>
+            <li>Optionally write a sticky note. Records with a note get a sticky-note mark on the chart.</li>
+            <li>Press <kbd>Save</kbd>.</li>
+          </ol>
+          <h3>Medication</h3>
+          <ol>
+            <li>In "Log medication", choose the <strong>medicine</strong> and the <strong>number of tablets</strong> (0.5 to 6). For a medicine not in the list, choose "Other (type it in)".</li>
+            <li>Optionally add a sticky note or a photo with <kbd>📷 Take / choose a photo</kbd>.</li>
+            <li>Press <kbd>Save dose</kbd>.</li>
+          </ol>
+          <h3>Recording after the fact</h3>
+          <p>
+            Tap the date/time field above the save button to set a past time (future times are not allowed); <kbd>Back to now</kbd> resets it.
+            For a past time, the pressure at that time is looked up (using your current location).
+          </p>
+          <h3>Time since your last dose</h3>
+          <p>
+            The pressure card shows the <strong>time since your last dose</strong>, and, for medicines with a dosing interval set, the <strong>time until the next dose</strong>.
+            This is only a guide based on your setting — follow your doctor's or pharmacist's instructions.
+          </p>
+        </section>
+
+        <section id="en-pressure">
+          <h2>3. Air pressure and the chart</h2>
+          <ul>
+            <li>
+              The "Pressure at your location" card shows pressure (hPa), weather, temperature, humidity and discomfort index for where you are,
+              plus a chart from the last 6 hours to the next 12 hours (<strong>solid line = actual, dashed line = forecast</strong>).
+              You get a notice when pressure is expected to fall. <kbd>Refresh</kbd> fetches it again; the app also records the pressure each time you open it.
+            </li>
+            <li><kbd>Advice</kbd> shows general self-care tips for falling or rising pressure. It is general information — see a doctor for severe or unusual symptoms.</li>
+            <li>
+              The "Pressure &amp; headache over time" chart overlays <strong>pressure (green line), headaches (red line and dots) and medication (tablet icons)</strong> on one time axis.
+              Switch the range (<kbd>All</kbd>, 6 hours, 1, 3, 7, 30 days), zoom with <kbd>＋</kbd>/<kbd>－</kbd> or a two-finger pinch, and drag to scroll.
+              Tap a dot, tablet or sticky-note mark to see that record's note and photo.
+            </li>
+          </ul>
+        </section>
+
+        <section id="en-manage">
+          <h2>4. History and settings</h2>
+          <ul>
+            <li><strong>History</strong> lists records newest first. <kbd>Edit</kbd> changes the time, level (or medicine/tablets) and note; <kbd>Delete</kbd> removes it (also from Google Drive and your other devices while logged in).</li>
+            <li>
+              <strong>Medicine settings</strong> (⚙): add, rename, change the color (used for tablet icons on the chart) and dosing interval (0.5–72 hours, optional),
+              reorder with ▲▼ (the order used when recording), or delete. Renaming updates past records; deleting keeps them.
+            </li>
+            <li>Also in Settings: language (日本語 / English) and appearance (auto, light, dark).</li>
+          </ul>
+        </section>
+
+        <section id="en-sync">
+          <h2>5. Google sync, several devices, offline</h2>
+          <ul>
+            <li>When logged in, records, medicine settings and photos are stored in the <strong>"Headache_Log"</strong> folder in your Google Drive. The app only handles files it created.</li>
+            <li>The same records appear on other devices logged in to the same Google account; if the same record was edited twice, the newer edit wins.</li>
+            <li><strong>It works offline.</strong> Records are saved on the device and sync automatically when you are back online (pressure and place are left out if unavailable).</li>
+            <li>Tap the top-right button to see the account and sync status, and to <kbd>Sync now</kbd>, switch account or log out.</li>
+          </ul>
+        </section>
+
+        <section id="en-export">
+          <h2>6. Exporting your data</h2>
+          <p>
+            In Settings → "Export data", your records are bundled as an Excel file (Records and Pressure log sheets), the medication photos, and the data file (<code>headache-data.json</code>).
+            <kbd>Save to Google Drive</kbd> creates an <code>Headache_date-time</code> folder inside "Headache_Log" (login required);
+            <kbd>Download to this device (ZIP)</kbd> saves the same files as a ZIP (works without logging in). Deleted records are not included.
+          </p>
+        </section>
+
+        <section id="en-trouble">
+          <h2>7. Troubleshooting</h2>
+          <ul>
+            <li>Cannot log in, or location does not work: if you opened the app inside another app (LINE, e-mail…), open this page directly in Safari (iPhone) or Chrome (Android). On the consent screen, keep the Google Drive box ticked.</li>
+            <li>No pressure or a location error: set the browser's location permission to "Allow" — the warning's <kbd>How to allow</kbd> button shows the steps for iPhone, Android and computers; then press <kbd>Try again</kbd>. Pressure cannot be fetched without a connection, and is fetched automatically when you are back online.</li>
+            <li>Records not appearing on another device: check the button glows green (logged in and online), press <kbd>Sync now</kbd>, and make sure both devices use the same Google account.</li>
+            <li>Data is stored only on your devices and in your Google Drive. See the <a href="./privacy.html">Privacy Policy</a>. This app organizes and displays your records; it does not provide medical diagnosis or advice.</li>
+          </ul>
+        </section>
+        <a class="back" href="./">← Back to the app</a>
+      </div>
+    </main>
+    <script>
+      // アプリの言語（?lang=ja / ?lang=en）のヘルプだけを表示する。指定が無ければ、端末の言語で決める
+      ;(function () {
+        var param = new URLSearchParams(location.search).get('lang')
+        var hash = location.hash.replace('#', '')
+        var lang = param === 'en' || param === 'ja' ? param : hash === 'en' || hash === 'ja' ? hash : null
+        if (!lang) lang = (navigator.language || '').toLowerCase().indexOf('ja') === 0 ? 'ja' : 'en'
+        document.getElementById(lang === 'en' ? 'ja' : 'en').hidden = true
+        document.documentElement.lang = lang
+        document.title = lang === 'en' ? 'Help — Headache Log' : 'ヘルプ — 頭痛ログ'
+      })()
+    </script>
+  </body>
+</html>

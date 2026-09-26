@@ -31,6 +31,12 @@ export default defineConfig({
           { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
+      workbox: {
+        // help.html・privacy.html は SPA ではない単独のページ。指定しないと、オフライン対応の仕組みが
+        // これらへの移動をすべてアプリ本体（index.html）に差し替えてしまい、開けなくなる。
+        // 照合はパス＋クエリ（?lang=ja など）に対して行われるので、クエリ付きも除外する
+        navigateFallbackDenylist: [/\/help\.html(\?.*)?$/, /\/privacy\.html(\?.*)?$/],
+      },
     }),
   ],
 })
