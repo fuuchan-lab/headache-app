@@ -23,6 +23,8 @@ export default function App() {
   const { t } = useI18n()
   const online = useOnline()
   const [tab, setTab] = useState<Tab>('record')
+  // 設定の画面で「戻る」を押した時に、直前に見ていたタブへ戻す
+  const [backTab, setBackTab] = useState<Tab>('record')
   const { records, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, renameMedication, remove } =
     useRecords()
   const auth = useGoogleAuth()
@@ -81,6 +83,7 @@ export default function App() {
   }
 
   const changeTab = (next: Tab) => {
+    if (next === 'settings' && tab !== 'settings') setBackTab(tab)
     setTab(next)
     window.scrollTo(0, 0)
   }
@@ -88,7 +91,13 @@ export default function App() {
   return (
     <>
     <main className="app">
-      <Header auth={auth} sync={sync} unsyncedCount={unsyncedCount} />
+      <Header
+        view={tab === 'settings' ? 'settings' : 'home'}
+        onToggleSettings={() => changeTab(tab === 'settings' ? backTab : 'settings')}
+        auth={auth}
+        sync={sync}
+        unsyncedCount={unsyncedCount}
+      />
 
       {/* 電波がない場所でも記録できることを伝える。ネットにつながると自動で同期する */}
       {!online && (
