@@ -1,5 +1,6 @@
-import { lazy, Suspense, useState } from 'react'
-import { AdBanner } from './components/AdBanner.tsx'
+import { useState } from 'react'
+import { BottomDock, type Tab } from './components/BottomDock.tsx'
+import { Dashboard } from './components/Dashboard.tsx'
 import { Header } from './components/Header.tsx'
 import { HeadacheForm } from './components/HeadacheForm.tsx'
 import type { EditResult } from './components/MedicineEditor.tsx'
@@ -18,13 +19,10 @@ import { NEAR_NOW_MS, SUBSTITUTE_MS } from './pressureAt.ts'
 import { raceTimeout } from './timeout.ts'
 import { fetchPressureAt } from './weather.ts'
 
-// グラフの部品（recharts）は大きいので別ファイルに分け、画面の他の部分を先に表示する
-const PressureChart = lazy(() => import('./components/PressureChart.tsx').then((m) => ({ default: m.PressureChart })))
-
 export default function App() {
   const { t } = useI18n()
   const online = useOnline()
-  const [view, setView] = useState<'home' | 'settings'>('home')
+  const [tab, setTab] = useState<Tab>('record')
   const { records, unsyncedCount, reload, addHeadache, addMedication, logPressure, update, renameMedication, remove } =
     useRecords()
   const auth = useGoogleAuth()
@@ -82,15 +80,15 @@ export default function App() {
     }
   }
 
+  const changeTab = (next: Tab) => {
+    setTab(next)
+    window.scrollTo(0, 0)
+  }
+
   return (
+    <>
     <main className="app">
-      <Header
-        view={view}
-        onToggleSettings={() => setView(view === 'home' ? 'settings' : 'home')}
-        auth={auth}
-        sync={sync}
-        unsyncedCount={unsyncedCount}
-      />
+      <Header auth={auth} sync={sync} unsyncedCount={unsyncedCount} />
 
       {/* 電波がない場所でも記録できることを伝える。ネットにつながると自動で同期する */}
       {!online && (
@@ -99,7 +97,7 @@ export default function App() {
         </p>
       )}
 
-      {view === 'settings' ? (
+      {tab === 'settings' && (
         <SettingsPage
           medicines={medicines}
           onAdd={addMedicine}
@@ -109,26 +107,30 @@ export default function App() {
           records={records}
           loggedIn={auth.account !== null}
         />
-      ) : (
-        <>
-          <PressureCard pressure={pressure} records={records} medicines={medicines} />
-          <HeadacheForm
-            pressure={pressure.forecast?.current ?? null}
-            onSave={async (level, note, ts) => addHeadache(level, note, ts, await snapshotAt(ts))}
-          />
-          <MedicationForm
-            medicines={medicines}
-            onSave={async (name, tablets, note, photo, ts) =>
-              addMedication(name, tablets, note, photo, ts, await snapshotAt(ts))
-            }
-          />
-          <Suspense fallback={<section className="card chart-loading" aria-busy="true" />}>
-            <PressureChart records={records} medicines={medicines} />
-          </Suspense>
-          <HistoryList records={records} medicines={medicines} onUpdate={update} onRemove={(r) => void remove(r)} />
-        </>
       )}
-      <AdBanner />
+
+      {/* 記録の画面は、他のタブへ移っても閉じずに隠すだけにして、入力の途中の内容を残す */}
+      <div className={tab === 'record' ? 'tab-panel' : 'tab-panel view-hidden'}>
+        <PressureCard pressure={pressure} records={records} medicines={medicines} />
+        <HeadacheForm
+          pressure={pressure.forecast?.current ?? null}
+          onSave={async (level, note, ts) => addHeadache(level, note, ts, await snapshotAt(ts))}
+        />
+        <MedicationForm
+          medicines={medicines}
+          onSave={async (name, tablets, note, photo, ts) =>
+            addMedication(name, tablets, note, photo, ts, await snapshotAt(ts))
+          }
+        />
+      </div>
+
+      {tab === 'list' && (
+        <HistoryList records={records} medicines={medicines} onUpdate={update} onRemove={(r) => void remove(r)} />
+      )}
+
+      {tab === 'dashboard' && <Dashboard records={records} medicines={medicines} />}
     </main>
+    <BottomDock tab={tab} onTab={changeTab} />
+    </>
   )
 }
