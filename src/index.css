@@ -1392,10 +1392,12 @@ textarea.sticky::placeholder {
 .ad-banner {
   margin-top: auto;
   min-height: 50px;
+  max-height: 100px;
   text-align: center;
   overflow: hidden;
 }
 
 .ad-banner ins {
   display: block;
+  max-height: 100px;
 }
