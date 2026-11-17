@@ -86,3 +86,27 @@ test('markPoints は近く(±0.5h)にデータがない時刻を含めない', (
   // -1h と +1h は、2時間ごとの目盛り(-2,0,2)から 1h 離れているので選ばれない
   assert.deepEqual(markPoints([{ hours: -1, hpa: 1000 }, { hours: 1, hpa: 1002 }]), [])
 })
+
+test('outlookSeries は取得時刻の気圧から始まり、15分ごとの範囲の先は1時間ごとでつなぐ', async () => {
+  const { outlookSeries } = await import('./forecast.ts')
+  const base = forecast({ current: 1001 })
+  // 1時間ごとの予報を3日先まで延ばす
+  const series = Array.from({ length: 6 + 72 + 1 }, (_, i) => {
+    const t = NOW - 6 * HOUR + i * HOUR
+    return { t, hpa: 1000 + (t - NOW) / HOUR, code: 0, isDay: true }
+  })
+  const s = outlookSeries({ ...base, series }, NOW)
+  assert.deepEqual(s[0], { t: NOW, hpa: 1001 })
+  assert.equal(s.at(-1)?.t, NOW + 72 * HOUR)
+  // 12時間後までは15分刻み、その先は1時間刻み
+  assert.equal(s[1].t - s[0].t, MIN15)
+  const after12 = s.filter((p) => p.t > NOW + 12 * HOUR)
+  assert.equal(after12[1].t - after12[0].t, HOUR)
+  // 時間順で重複なし
+  assert.equal(new Set(s.map((p) => p.t)).size, s.length)
+})
+
+test('outlookSeries は予報がなければ空を返す', async () => {
+  const { outlookSeries } = await import('./forecast.ts')
+  assert.deepEqual(outlookSeries(forecast({ fine: [], series: [] }), NOW), [])
+})

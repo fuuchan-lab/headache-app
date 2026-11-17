@@ -23,7 +23,12 @@ PWA を TWA（Trusted Web Activity）で Android アプリにして、Play ス�
    「クローズドテスト」を一定人数のテスターで一定期間続ける必要がある（2026年時点の目安は **12人以上・14日間**。
    条件は変わることがあるので、Play Console の最新の案内で確認する）。
 
-## 3. アプリ本体（AAB ファイル）の作り方 — PWABuilder
+## 3. アプリ本体（AAB ファイル）の作り方
+
+LeadLog・CapLog と同じ Bubblewrap で作る方法を推奨（設定ファイル `android/twa-manifest.json` と手順 `android/README.md` を用意済み）。
+以下の PWABuilder でも作れる。
+
+### PWABuilder で作る場合
 
 1. https://www.pwabuilder.com を開き、`https://headache.doitmyself.net` を入力して「Start」。
 2. 診断が終わったら「Package For Stores」→「Android」。
@@ -91,6 +96,7 @@ PWA を TWA（Trusted Web Activity）で Android アプリにして、Play ス�
 
 ■ いまの気圧がすぐわかる
 ・現在地の気圧・天気・気温・湿度を表示（直前6時間〜今後12時間の推移つき）
+・記録のグラフに、この先3日間の気圧の予報を点線で表示
 ・気圧が下がる見込みのときは、お知らせとセルフケアのヒントを表示
 ・アプリを開くたびに、その場所の気圧を自動で記録
 
@@ -107,6 +113,7 @@ PWA を TWA（Trusted Web Activity）で Android アプリにして、Play ス�
 
 ■ 電波がなくても記録できる
 ・オフラインでも記録でき、ネットにつながると自動で同期します
+・電波がない時も、最後に取得した気圧と予報を表示します
 
 ■ そのほか
 ・日本語 / English に対応
@@ -131,6 +138,7 @@ Headache Log is a simple diary for recording how bad your headache is, what medi
 
 ■ Know the pressure right now
 • Current air pressure, weather, temperature and humidity for your location, with the trend from 6 hours ago to 12 hours ahead
+• The pressure forecast for the next 3 days, shown as a dashed line in the records chart
 • A heads-up and self-care tips when pressure is expected to drop
 • The pressure at your location is recorded automatically each time you open the app
 
@@ -147,6 +155,7 @@ Headache Log is a simple diary for recording how bad your headache is, what medi
 
 ■ Works without a signal
 • Log offline; records sync automatically when you are back online
+• Without a signal, the last fetched pressure and forecast are still shown
 
 ■ More
 • Japanese and English

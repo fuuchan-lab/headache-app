@@ -83,3 +83,28 @@ test('chooseTicks: どの期間でも目盛りは8個以内に収まる', () => 
     assert.ok(t.values.length >= 1, `${days}日: 目盛りがない`)
   }
 })
+
+test('presetWindow は予報がある時、幅の1/3を今より先に使う', async () => {
+  const { presetWindow } = await import('./chartView.ts')
+  const now = at(15, 12)
+  const limits = { from: at(1), to: now + 72 * HOUR }
+  const w = presetWindow(24, now, limits)
+  assert.equal(w.to - w.from, 24 * HOUR)
+  assert.equal(w.to, now + 8 * HOUR)
+})
+
+test('presetWindow は予報がなければ、記録の終わりに合わせる', async () => {
+  const { presetWindow } = await import('./chartView.ts')
+  const limits = { from: at(1), to: at(15, 12) }
+  const w = presetWindow(24, at(15, 12) + 5 * HOUR, limits)
+  assert.equal(w.to, limits.to)
+  assert.equal(w.to - w.from, 24 * HOUR)
+})
+
+test('presetWindow は予報の終わりより先へは出ない', async () => {
+  const { presetWindow } = await import('./chartView.ts')
+  const now = at(15, 12)
+  const limits = { from: at(1), to: now + 2 * HOUR }
+  const w = presetWindow(24, now, limits)
+  assert.equal(w.to, limits.to)
+})

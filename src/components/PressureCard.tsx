@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { PressureState } from '../hooks/usePressure.ts'
 import { useOnline } from '../hooks/useOnline.ts'
 import { usePlaceName } from '../hooks/usePlaceName.ts'
+import { formatDateTime } from '../format.ts'
 import { discomfortCategory, discomfortColor, discomfortIndex } from '../discomfort.ts'
 import { useI18n } from '../i18n/useI18n.ts'
 import { assessTrend } from '../warning.ts'
@@ -35,7 +36,7 @@ export function PressureCard({ pressure, records, medicines }: Props) {
   const [adviceOpen, setAdviceOpen] = useState(false)
   const [locationHelpOpen, setLocationHelpOpen] = useState(false)
   const online = useOnline()
-  const { status, forecast, error, staleLocation, fetchedAt, refresh, position } = pressure
+  const { status, forecast, error, staleLocation, fetchedAt, refresh, position, fromCache } = pressure
   // 気圧を取得している位置の市区町村名（取得できなければ付けない）
   const place = usePlaceName(position, lang)
   const weather = forecast ? describeWeather(forecast.weather.code, forecast.weather.isDay, t) : null
@@ -79,6 +80,10 @@ export function PressureCard({ pressure, records, medicines }: Props) {
             </div>
           </div>
           {fetchedAt && <PressureSparkline forecast={forecast} now={fetchedAt} />}
+          {/* 電波がない時などは、前回取得した気圧と予報を、取得した時刻を添えて出す */}
+          {fromCache && fetchedAt && (
+            <p className="muted small cached-note">{t('pressure.cached', { time: formatDateTime(fetchedAt, lang) })}</p>
+          )}
         </>
       ) : (
         status === 'loading' && <p className="muted">{t('pressure.fetching')}</p>

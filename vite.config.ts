@@ -32,10 +32,15 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // 電波がない時に開いても、画面・ヘルプ・アイコンまで表示できるよう、すべて端末に保存しておく
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest}'],
+        // 新しい版が公開されたら、次に開いた時にすぐ切り替える（古い版のキャッシュは消す）
+        cleanupOutdatedCaches: true,
         // help.html・privacy.html は SPA ではない単独のページ。指定しないと、オフライン対応の仕組みが
         // これらへの移動をすべてアプリ本体（index.html）に差し替えてしまい、開けなくなる。
         // 照合はパス＋クエリ（?lang=ja など）に対して行われるので、クエリ付きも除外する
-        navigateFallbackDenylist: [/\/help\.html(\?.*)?$/, /\/privacy\.html(\?.*)?$/],
+        // .well-known（Android アプリとサイトの紐づけ）も、アプリ本体に差し替えない
+        navigateFallbackDenylist: [/\/help\.html(\?.*)?$/, /\/privacy\.html(\?.*)?$/, /\/\.well-known\//],
       },
     }),
   ],

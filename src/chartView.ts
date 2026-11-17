@@ -55,6 +55,19 @@ export function zoomWindow(w: TimeWindow, factor: number, anchorRatio: number, l
   return clampWindow({ from, to: from + newSpan }, limits)
 }
 
+/** プリセット（6時間・1日など）で見せる範囲のうち、「今」より先（予報）に割く割合 */
+const PRESET_FUTURE_RATIO = 1 / 3
+
+/**
+ * プリセットの表示範囲。予報があれば、今の少し先まで（幅の1/3まで、予報のある所まで）を含め、残りを過去に使う。
+ * 予報がなければ（limits の終わりが今より前なら）、従来どおり記録の終わりに合わせる。
+ */
+export function presetWindow(hours: number, now: number, limits: TimeWindow): TimeWindow {
+  const width = hours * HOUR
+  const to = Math.min(limits.to, now + width * PRESET_FUTURE_RATIO)
+  return clampWindow({ from: to - width, to }, limits)
+}
+
 /** 時間の向きにずらす（正なら未来へ）。記録のない範囲までは動かさない */
 export function panWindow(w: TimeWindow, deltaMs: number, limits: TimeWindow): TimeWindow {
   return clampWindow({ from: w.from + deltaMs, to: w.to + deltaMs }, limits)

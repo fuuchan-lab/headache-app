@@ -461,6 +461,12 @@ button.link.move-button {
   border-radius: 2px;
 }
 
+/* 予報の凡例: 点線 */
+.swatch-dashed {
+  background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 7px);
+}
+
+
 /* ヘッダー（アプリ名・設定・Googleログイン） */
 .topbar {
   min-width: 0;

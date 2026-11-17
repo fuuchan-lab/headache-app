@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { describeError } from '../errors.ts'
+import { loadCachedForecast, saveCachedForecast } from '../forecastCache.ts'
 import { getPosition, type Position } from '../geo.ts'
 import { fetchPressure, type PressureForecast } from '../weather.ts'
 
@@ -21,6 +22,11 @@ export interface PressureState {
   staleLocation: boolean
   /** 取得完了時刻 */
   fetchedAt: number | null
+  /**
+   * 表示している気圧・予報が、端末に残しておいた前回の取得分（電波がない時など）。
+   * いまの気圧ではないので、記録には付けない
+   */
+  fromCache: boolean
 }
 
 const initial: PressureState = {
@@ -30,6 +36,14 @@ const initial: PressureState = {
   error: null,
   staleLocation: false,
   fetchedAt: null,
+  fromCache: false,
+}
+
+/** 前回の取得分が端末に残っていれば、それを表示しながら最新の取得を待つ（オフラインでも予報を見られる） */
+function initialState(): PressureState {
+  const cached = loadCachedForecast()
+  if (!cached) return initial
+  return { ...initial, status: 'ready', forecast: cached.forecast, position: cached.position, fetchedAt: cached.fetchedAt, fromCache: true }
 }
 
 function geolocationCode(e: unknown): number | undefined {
@@ -44,7 +58,7 @@ function geolocationCode(e: unknown): number | undefined {
  * 取得できるたびに onFetched を呼ぶ（記録の保存は呼び出し側で行う）。
  */
 export function usePressure(onFetched: (forecast: PressureForecast, pos: Position) => void) {
-  const [state, setState] = useState<PressureState>(initial)
+  const [state, setState] = useState<PressureState>(initialState)
   const onFetchedRef = useRef(onFetched)
   useEffect(() => {
     onFetchedRef.current = onFetched
@@ -57,7 +71,8 @@ export function usePressure(onFetched: (forecast: PressureForecast, pos: Positio
       setState((s) => ({
         ...s,
         // 電波がなくて気圧が取れなくても、GPS で場所が取れていれば、記録にはその場所を残す（気圧はなし）
-        position: !s.forecast && freshPosition ? freshPosition : s.position,
+        // 前回の取得分を表示している時も、記録には今の場所を残す
+        position: (!s.forecast || s.fromCache) && freshPosition ? freshPosition : s.position,
         status: s.forecast ? 'ready' : 'error',
         error: { kind, detail: describeError(e), code: geolocationCode(e) },
       }))
@@ -79,14 +94,17 @@ export function usePressure(onFetched: (forecast: PressureForecast, pos: Positio
       fail('pressure', e, fresh ? pos : undefined)
       return
     }
+    const fetchedAt = Date.now()
     setState({
       status: 'ready',
       forecast,
       position: pos,
       error: null,
       staleLocation: !fresh,
-      fetchedAt: Date.now(),
+      fetchedAt,
+      fromCache: false,
     })
+    saveCachedForecast({ forecast, position: pos, fetchedAt })
     onFetchedRef.current(forecast, pos)
   }, [])
 

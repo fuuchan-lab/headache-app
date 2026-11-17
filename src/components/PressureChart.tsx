@@ -12,15 +12,16 @@ import {
 } from 'recharts'
 import {
   DAY,
-  HOUR,
   MIN_SPAN,
   autoWindow,
   chooseTicks,
   clampWindow,
   coversAll,
+  presetWindow,
   zoomWindow,
   type TimeWindow,
 } from '../chartView.ts'
+import { outlookSeries } from '../forecast.ts'
 import { recordTitle } from '../format.ts'
 import { useChartGestures } from '../hooks/useChartGestures.ts'
 import { LOCALES } from '../i18n/context.ts'
@@ -28,6 +29,7 @@ import { useI18n } from '../i18n/useI18n.ts'
 import { localizeMedicineName } from '../medicineNames.ts'
 import { colorFor, type Medicine } from '../settings.ts'
 import { LEVEL_COLORS, type AppRecord, type HeadacheLevel } from '../types.ts'
+import type { PressureForecast } from '../weather.ts'
 import { PillIcon } from './PillIcon.tsx'
 import { RecordPopup } from './RecordPopup.tsx'
 import { StickyIcon } from './StickyIcon.tsx'
@@ -51,7 +53,11 @@ interface Point {
   id?: string
   pressure?: number
   level?: number
+  /** 予報の気圧（点線で描く） */
+  ahead?: number
 }
+
+const PRESSURE_COLOR = '#0f766e'
 
 interface MedMark {
   id: string
@@ -101,15 +107,35 @@ function LevelDot({ cx, cy, payload, onOpen, label }: LevelDotProps) {
 /** 表示中: null は「全体」（記録の量に合わせて自動）、それ以外は拡大・移動した範囲 */
 type View = { window: TimeWindow; hours: number | null } | null
 
-export function PressureChart({ records, medicines }: { records: AppRecord[]; medicines: Medicine[] }) {
+interface Props {
+  records: AppRecord[]
+  medicines: Medicine[]
+  /** 現在地の気圧の予報。取得した時刻より先を点線で描く */
+  forecast: PressureForecast | null
+  fetchedAt: number | null
+  /** 「今」の縦線の位置と、プリセットの範囲の基準 */
+  now: number
+}
+
+export function PressureChart({ records, medicines, forecast, fetchedAt, now }: Props) {
   const { t, lang } = useI18n()
   const [view, setView] = useState<View>(null)
   const [openId, setOpenId] = useState<string | null>(null)
 
-  // 記録の時刻すべてが収まる範囲。記録が増えれば、この範囲も自動で広がる
+  // この先の気圧（予報）。わかる範囲（3日先まで）を点線でつなぐ
+  const outlook = useMemo(
+    () => (forecast && fetchedAt ? outlookSeries(forecast, fetchedAt) : []),
+    [forecast, fetchedAt],
+  )
+
+  // 記録の時刻と予報の終わりまでがすべて収まる範囲。記録が増えれば、この範囲も自動で広がる
   const auto = useMemo(
-    () => autoWindow(records.filter((r) => r.type !== 'pressure' || r.pressure !== null).map((r) => r.ts)),
-    [records],
+    () =>
+      autoWindow([
+        ...records.filter((r) => r.type !== 'pressure' || r.pressure !== null).map((r) => r.ts),
+        ...(outlook.length > 0 ? [outlook[0].t, outlook[outlook.length - 1].t] : []),
+      ]),
+    [records, outlook],
   )
   const win = view ? clampWindow(view.window, auto) : auto
   const spanMs = win.to - win.from
@@ -120,16 +146,21 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
 
   const { setContainer, handlers } = useChartGestures({ window: win, limits: auto, onChange: (w) => applyWindow(w) })
 
+  const { from: winFrom, to: winTo } = win
   const { points, meds, notes, pressureDomain } = useMemo(() => {
     // 端の線が途切れないよう、範囲の外側も半分の幅だけ含める
-    const margin = (win.to - win.from) / 2
-    const near = records.filter((r) => r.ts >= win.from - margin && r.ts <= win.to + margin).sort((a, b) => a.ts - b.ts)
-    const visible = near.filter((r) => r.ts >= win.from && r.ts <= win.to)
+    const margin = (winTo - winFrom) / 2
+    const near = records.filter((r) => r.ts >= winFrom - margin && r.ts <= winTo + margin).sort((a, b) => a.ts - b.ts)
+    const visible = near.filter((r) => r.ts >= winFrom && r.ts <= winTo)
     const points: Point[] = near.flatMap((r): Point[] => {
       if (r.type === 'headache') return [{ t: r.ts, id: r.id, level: r.level, pressure: r.pressure ?? undefined }]
       if (r.type === 'pressure' && r.pressure !== null) return [{ t: r.ts, pressure: r.pressure }]
       return []
     })
+    // 予報の点。先頭（取得した時刻の気圧）で実績の線とつながる
+    const aheadNear = outlook.filter((p) => p.t >= winFrom - margin && p.t <= winTo + margin)
+    for (const p of aheadNear) points.push({ t: p.t, ahead: p.hpa })
+    points.sort((a, b) => a.t - b.t)
     const meds: MedMark[] = visible.flatMap((r): MedMark[] =>
       r.type === 'medication'
         ? [{ id: r.id, t: r.ts, name: r.name, color: colorFor(medicines, r.name), ...pillCounts(r.tablets ?? 1) }]
@@ -140,12 +171,15 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
       r.type !== 'pressure' && r.note ? [{ id: r.id, t: r.ts, title: recordTitle(r, t, lang) }] : [],
     )
     // アイコンを軸の位置に置くため、気圧軸の範囲は自分で計算する（見えている範囲の気圧に合わせる）
-    const inView = (visible.length > 0 ? visible : near).flatMap((r) => (r.pressure !== null ? [r.pressure] : []))
+    const inView = [
+      ...(visible.length > 0 ? visible : near).flatMap((r) => (r.pressure !== null ? [r.pressure] : [])),
+      ...aheadNear.filter((p) => p.t >= winFrom && p.t <= winTo).map((p) => p.hpa),
+    ]
     const pressureDomain: [number, number] = inView.length
       ? [Math.floor(Math.min(...inView)) - 2, Math.ceil(Math.max(...inView)) + 2]
       : [990, 1030]
     return { points, meds, notes, pressureDomain }
-  }, [records, medicines, win.from, win.to, t, lang])
+  }, [records, outlook, medicines, winFrom, winTo, t, lang])
 
   const usedMeds = useMemo(() => {
     const seen = new Map<string, string>()
@@ -166,6 +200,8 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
   }
 
   const pressureName = t('chart.pressure')
+  const aheadName = t('chart.forecast')
+  const nowInView = outlook.length > 0 && now >= win.from && now <= win.to
   // 軸の線の位置（ここを基準に、錠剤は少し上・付箋は少し下へずらして描く）
   const axisY = pressureDomain[0] + 0.01
   const titleOf = (id: string) => {
@@ -201,7 +237,7 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
           <button
             key={h}
             className={view?.hours === h ? 'on' : ''}
-            onClick={() => applyWindow({ from: auto.to - h * HOUR, to: auto.to }, h)}
+            onClick={() => applyWindow(presetWindow(h, now, auto), h)}
           >
             {h < 24 ? t('chart.hours', { n: h }) : t('chart.days', { n: h / 24 })}
           </button>
@@ -235,8 +271,21 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
             />
             <Tooltip
               labelFormatter={(v) => new Date(v as number).toLocaleString(LOCALES[lang])}
-              formatter={(v, name) => (name === pressureName ? [`${Number(v).toFixed(1)} hPa`, name] : [String(v), name])}
+              formatter={(v, name) =>
+                name === pressureName || name === aheadName ? [`${Number(v).toFixed(1)} hPa`, name] : [String(v), name]
+              }
             />
+            {/* 「今」の位置。ここから右が予報 */}
+            {nowInView && (
+              <ReferenceLine
+                yAxisId="p"
+                x={now}
+                stroke="currentColor"
+                strokeOpacity={0.45}
+                strokeDasharray="2 3"
+                label={{ value: t('spark.now'), position: 'insideTopLeft', fontSize: 11, fill: 'currentColor' }}
+              />
+            )}
             {meds.map((m) => (
               <ReferenceLine key={m.id} yAxisId="p" x={m.t} stroke={m.color} strokeDasharray="4 3" strokeOpacity={0.7} />
             ))}
@@ -245,12 +294,27 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
               yAxisId="p"
               dataKey="pressure"
               name={pressureName}
-              stroke="#0f766e"
+              stroke={PRESSURE_COLOR}
               strokeWidth={2}
               dot={false}
               connectNulls
               isAnimationActive={false}
             />
+            {outlook.length > 0 && (
+              <Line
+                type="monotone"
+                yAxisId="p"
+                dataKey="ahead"
+                name={aheadName}
+                stroke={PRESSURE_COLOR}
+                strokeWidth={2}
+                strokeDasharray="5 4"
+                strokeOpacity={0.8}
+                dot={false}
+                connectNulls
+                isAnimationActive={false}
+              />
+            )}
             <Line
               type="monotone"
               yAxisId="l"
@@ -338,9 +402,15 @@ export function PressureChart({ records, medicines }: { records: AppRecord[]; me
       <p className="muted small">{t('chart.zoomHint')}</p>
       <ul className="legend">
         <li>
-          <span className="swatch" style={{ background: '#0f766e' }} />
+          <span className="swatch" style={{ background: PRESSURE_COLOR }} />
           {t('chart.legendPressure')}
         </li>
+        {outlook.length > 0 && (
+          <li>
+            <span className="swatch swatch-dashed" style={{ color: PRESSURE_COLOR }} />
+            {t('chart.legendForecast')}
+          </li>
+        )}
         <li>
           <span className="swatch" style={{ background: '#dc2626' }} />
           {t('chart.legendHeadache')}

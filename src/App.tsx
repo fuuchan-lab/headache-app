@@ -56,8 +56,11 @@ export default function App() {
     return 'ok'
   }
 
+  // 前回の取得分（オフライン時など）を表示している間は、いまの気圧ではないので記録に付けない
+  const currentPressure = pressure.fromCache ? null : (pressure.forecast?.current ?? null)
+
   const snapshot = (): Snapshot => ({
-    pressure: pressure.forecast?.current ?? null,
+    pressure: currentPressure,
     lat: pressure.position?.lat ?? null,
     lon: pressure.position?.lon ?? null,
   })
@@ -122,7 +125,7 @@ export default function App() {
       <div className={tab === 'record' ? 'tab-panel' : 'tab-panel view-hidden'}>
         <PressureCard pressure={pressure} records={records} medicines={medicines} />
         <HeadacheForm
-          pressure={pressure.forecast?.current ?? null}
+          pressure={currentPressure}
           onSave={async (level, note, ts) => addHeadache(level, note, ts, await snapshotAt(ts))}
         />
         <MedicationForm
@@ -137,7 +140,7 @@ export default function App() {
         <HistoryList records={records} medicines={medicines} onUpdate={update} onRemove={(r) => void remove(r)} />
       )}
 
-      {tab === 'dashboard' && <Dashboard records={records} medicines={medicines} />}
+      {tab === 'dashboard' && <Dashboard records={records} medicines={medicines} forecast={pressure.forecast} fetchedAt={pressure.fetchedAt} />}
     </main>
     <BottomDock tab={tab} onTab={changeTab} />
     </>

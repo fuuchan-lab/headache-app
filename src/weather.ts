@@ -1,4 +1,5 @@
 import type { TFn } from './i18n/context.ts'
+import { OUTLOOK_HOURS } from './forecast.ts'
 import { interpolatePressure, type HourlyPoint } from './pressureAt.ts'
 
 interface PressurePoint {
@@ -22,7 +23,7 @@ export interface PressureForecast {
   current: number
   /** 現在の天気 */
   weather: { code: number; isDay: boolean; temperature: number; humidity: number }
-  /** 過去6時間〜先12時間の1時間ごとの気圧と天気 */
+  /** 過去6時間〜先72時間（3日先）の1時間ごとの気圧と天気。記録グラフの予報（点線）にも使う */
   series: PressurePoint[]
   /** 過去6時間〜先12時間の15分ごとの気圧。取得できない地域では空 */
   fine: FinePoint[]
@@ -54,7 +55,8 @@ export async function fetchPressure(lat: number, lon: number): Promise<PressureF
     current: 'surface_pressure,weather_code,is_day,temperature_2m,relative_humidity_2m',
     hourly: 'surface_pressure,weather_code,is_day',
     past_hours: '6',
-    forecast_hours: '12',
+    // 記録グラフで「この先」を点線で見せるため、1時間ごとの予報は3日先まで取る
+    forecast_hours: String(OUTLOOK_HOURS),
     minutely_15: 'surface_pressure',
     past_minutely_15: '24',
     forecast_minutely_15: '48',

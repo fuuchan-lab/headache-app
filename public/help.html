@@ -244,10 +244,11 @@
             <li><strong>赤い線と丸</strong>: 頭痛（0〜5・右の軸。丸の色は度合いで変わります）</li>
             <li><strong>錠剤のアイコン</strong>: 服薬（錠数分が重なって表示。0.5錠は半分）</li>
             <li><strong>付箋マーク</strong>: メモのある記録</li>
+            <li><strong>緑の点線</strong>: この先の気圧の予報（現在地。わかる範囲で3日先まで）。「今」の縦線から右が予報です</li>
           </ul>
           <h3>操作</h3>
           <ul>
-            <li>期間の切り替え: <kbd>全体</kbd>（記録の量に合わせて自動）・<kbd>6時間</kbd>・<kbd>1日</kbd>・<kbd>3日</kbd>・<kbd>7日</kbd>・<kbd>30日</kbd></li>
+            <li>期間の切り替え: <kbd>全体</kbd>（記録と予報の全体に合わせて自動）・<kbd>6時間</kbd>・<kbd>1日</kbd>・<kbd>3日</kbd>・<kbd>7日</kbd>・<kbd>30日</kbd>（幅の1/3ほどは、今より先の予報を表示）</li>
             <li>拡大・縮小: <kbd>＋</kbd> / <kbd>－</kbd> ボタン、または2本指のピンチ</li>
             <li>移動: グラフをドラッグ</li>
             <li>丸・錠剤・付箋マークをタップすると、その記録の<strong>詳細（付箋メモ・写真）</strong>がポップアップで開きます。</li>
@@ -286,6 +287,7 @@
             <li><strong>電波がない場所でも記録できます。</strong>記録はこの端末に保存され、ネットにつながると自動で Google ドライブに同期します（気圧・場所が取れない時は、その情報なしで保存）。</li>
             <li>右上のボタンを押すと、ログイン中のアカウントや同期の状態が見られ、<kbd>今すぐ同期</kbd>・<kbd>アカウントを切り替え</kbd>・<kbd>ログアウト</kbd>ができます。</li>
             <li>電波なしでアプリを開いても、ログイン状態は保たれます（初回だけは、ネットにつないで開いてください）。</li>
+            <li>電波がない時は、<strong>最後に取得した気圧と予報</strong>を、取得した時刻を添えて表示します（記録のグラフの点線も同じ）。この気圧は「いまの気圧」ではないので、記録には付けません。</li>
           </ul>
         </section>
 
@@ -414,6 +416,7 @@
             <li><kbd>Advice</kbd> shows general self-care tips for falling or rising pressure. It is general information — see a doctor for severe or unusual symptoms.</li>
             <li>
               The "Pressure &amp; headache over time" chart overlays <strong>pressure (green line), headaches (red line and dots) and medication (tablet icons)</strong> on one time axis.
+              The <strong>dashed green line</strong> to the right of "Now" is the pressure forecast for your location (as far as it is available, up to 3 days).
               Switch the range (<kbd>All</kbd>, 6 hours, 1, 3, 7, 30 days), zoom with <kbd>＋</kbd>/<kbd>－</kbd> or a two-finger pinch, and drag to scroll.
               Tap a dot, tablet or sticky-note mark to see that record's note and photo.
             </li>
@@ -439,6 +442,7 @@
             <li>When logged in, records, medicine settings and photos are stored in the <strong>"Headache_Log"</strong> folder in your Google Drive. The app only handles files it created.</li>
             <li>The same records appear on other devices logged in to the same Google account; if the same record was edited twice, the newer edit wins.</li>
             <li><strong>It works offline.</strong> Records are saved on the device and sync automatically when you are back online (pressure and place are left out if unavailable).</li>
+            <li>Without a signal, the <strong>last fetched pressure and forecast</strong> are shown with the time they were fetched (also the dashed line in the chart). They are not attached to new records, since they are not the current pressure.</li>
             <li>Tap the top-right button to see the account and sync status, and to <kbd>Sync now</kbd>, switch account or log out.</li>
           </ul>
         </section>

@@ -5,6 +5,7 @@ import { useI18n } from '../i18n/useI18n.ts'
 import { localizeMedicineName } from '../medicineNames.ts'
 import { colorFor, type Medicine } from '../settings.ts'
 import { LEVEL_COLORS, type AppRecord, type HeadacheLevel } from '../types.ts'
+import type { PressureForecast } from '../weather.ts'
 
 // グラフの部品（recharts）は大きいので別ファイルに分け、画面の他の部分を先に表示する
 const PressureChart = lazy(() => import('./PressureChart.tsx').then((m) => ({ default: m.PressureChart })))
@@ -14,6 +15,10 @@ const LEVELS: HeadacheLevel[] = [5, 4, 3, 2, 1, 0]
 interface Props {
   records: AppRecord[]
   medicines: Medicine[]
+  /** 現在地の気圧の予報。記録グラフの「この先」を点線で描くのに使う */
+  forecast: PressureForecast | null
+  /** 予報を取得した時刻 */
+  fetchedAt: number | null
 }
 
 interface BarRowProps {
@@ -40,7 +45,7 @@ function BarRow({ name, color, count, max }: BarRowProps) {
 }
 
 /** 集計（件数・期間別・痛みの強さ別・薬ごと）と、気圧と記録のグラフ */
-export function Dashboard({ records, medicines }: Props) {
+export function Dashboard({ records, medicines, forecast, fetchedAt }: Props) {
   const { t, lang } = useI18n()
   // 「直近7日」などの基準は、この画面を開いた時刻
   const [now] = useState(() => Date.now())
@@ -122,7 +127,7 @@ export function Dashboard({ records, medicines }: Props) {
         )}
       </section>
       <Suspense fallback={<section className="card chart-loading" aria-busy="true" />}>
-        <PressureChart records={records} medicines={medicines} />
+        <PressureChart records={records} medicines={medicines} forecast={forecast} fetchedAt={fetchedAt} now={now} />
       </Suspense>
     </>
   )

@@ -54,3 +54,26 @@ export function markPoints(points: TrendPoint[], stepHours = 2): Mark[] {
   }
   return marks
 }
+
+/** 記録グラフに出す予報の長さ (h)。Open-Meteo の1時間ごとの予報をこの先まで取る */
+export const OUTLOOK_HOURS = 72
+
+export interface OutlookPoint {
+  /** epoch ms */
+  t: number
+  hpa: number
+}
+
+/**
+ * 記録グラフ用の予報（取得した時刻より先の気圧）。15分ごとのデータがある所まではそれを使い、
+ * その先は1時間ごとのデータでつなぐ。先頭に「取得した時刻の現在の気圧」を置き、実績の線と途切れずにつなげる。
+ */
+export function outlookSeries(f: PressureForecast, fetchedAt: number): OutlookPoint[] {
+  const valid = (p: { hpa: unknown }) => typeof p.hpa === 'number' && Number.isFinite(p.hpa)
+  const fine = f.fine.filter((p) => p.t > fetchedAt && valid(p)).map(({ t, hpa }) => ({ t, hpa }))
+  const fineEnd = fine.length > 0 ? fine[fine.length - 1].t : fetchedAt
+  const hourly = f.series.filter((p) => p.t > fineEnd && valid(p)).map(({ t, hpa }) => ({ t, hpa }))
+  const ahead = [...fine, ...hourly].sort((a, b) => a.t - b.t)
+  if (ahead.length === 0) return []
+  return [{ t: fetchedAt, hpa: f.current }, ...ahead]
+}
