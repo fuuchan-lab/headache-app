@@ -40,6 +40,9 @@ export default defineConfig({
         // これらへの移動をすべてアプリ本体（index.html）に差し替えてしまい、開けなくなる。
         // 照合はパス＋クエリ（?lang=ja など）に対して行われるので、クエリ付きも除外する
         // .well-known（Android アプリとサイトの紐づけ）も、アプリ本体に差し替えない
+        // help.html は ?lang=ja / ?lang=en を付けて開く。端末に保存したページは「help.html」の名前で
+        // 登録されるので、lang を無視して照合しないと、オフラインの時にヘルプが開けない
+        ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^lang$/],
         navigateFallbackDenylist: [/\/help\.html(\?.*)?$/, /\/privacy\.html(\?.*)?$/, /\/\.well-known\//],
       },
     }),
