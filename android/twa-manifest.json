@@ -26,7 +26,11 @@
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://headache.doitmyself.net/manifest.webmanifest",
   "fallbackType": "customtabs",
-  "features": {},
+  "features": {
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
   "alphaDependencies": {
     "enabled": false
   },
@@ -36,7 +40,12 @@
   "fullScopeUrl": "https://headache.doitmyself.net/",
   "minSdkVersion": 21,
   "orientation": "portrait",
-  "fingerprints": [],
+  "fingerprints": [
+    {
+      "name": "upload",
+      "value": "EA:CB:11:EC:AA:A7:27:20:16:32:D4:AE:EA:CB:41:10:4A:3C:37:4F:B1:E9:F7:87:05:36:37:6B:D2:43:A4:62"
+    }
+  ],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "protocolHandlers": [],

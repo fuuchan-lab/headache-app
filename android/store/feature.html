@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Feature graphic</title>
+<!-- Google Play のフィーチャーグラフィック（1024×500）。ブラウザで開いて 1024×500 で撮る -->
+<style>
+  html, body { margin: 0; }
+  body {
+    width: 1024px; height: 500px; overflow: hidden; display: flex; align-items: center; gap: 48px; padding: 0 64px; box-sizing: border-box;
+    background: radial-gradient(circle at 80% 25%, #14b8a6 0%, #0f766e 45%, #0b3f3b 100%); color: #fff;
+    font-family: "Noto Sans JP", "Yu Gothic UI", "Meiryo", sans-serif;
+  }
+  img { width: 290px; height: 290px; flex: none; border-radius: 64px; filter: drop-shadow(0 12px 30px rgba(0, 0, 0, .35)); }
+  h1 { margin: 0 0 18px; font-size: 66px; letter-spacing: .02em; line-height: 1.1; }
+  p { margin: 0; font-size: 28px; line-height: 1.6; color: #e0fbf6; }
+  .tags { margin-top: 22px; display: flex; gap: 12px; }
+  .tags span { font-size: 22px; padding: 6px 16px; border-radius: 999px; background: rgba(255, 255, 255, .16); }
+</style>
+<style>img[src="icon-512.png"] { border-radius: 20% !important; }</style>
+</head>
+<body>
+  <img src="icon-512.png" alt="">
+  <div>
+    <h1>頭痛ログ</h1>
+    <p>気圧の変化と頭痛・服薬を、<br>ひとつのグラフで記録・確認。</p>
+    <div class="tags"><span>🌀 気圧</span><span>⚡ 頭痛</span><span>💊 服薬</span><span>📴 オフライン</span></div>
+  </div>
+</body>
+</html>

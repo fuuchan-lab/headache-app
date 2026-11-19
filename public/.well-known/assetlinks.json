@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "net.doitmyself.headachelog",
+      "sha256_cert_fingerprints": [
+        "EA:CB:11:EC:AA:A7:27:20:16:32:D4:AE:EA:CB:41:10:4A:3C:37:4F:B1:E9:F7:87:05:36:37:6B:D2:43:A4:62"
+      ]
+    }
+  }
+]
