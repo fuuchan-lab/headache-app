@@ -1,10 +1,26 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "net.doitmyself.headachelog",
       "sha256_cert_fingerprints": [
+        "EA:CB:11:EC:AA:A7:27:20:16:32:D4:AE:EA:CB:41:10:4A:3C:37:4F:B1:E9:F7:87:05:36:37:6B:D2:43:A4:62",
+        "5A:1C:B3:49:D3:DE:43:5C:70:62:32:70:7D:DB:34:AA:4F:6B:01:36:7F:6F:7D:25:64:27:21:2E:6E:E1:11:31"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "net.doitmyself.headachelog.paid",
+      "sha256_cert_fingerprints": [
+        "0A:34:FD:4F:E8:3D:73:D4:BC:24:36:7D:A7:29:68:84:E7:0D:E6:8C:27:47:0B:A8:E6:E7:FB:2B:8C:57:C2:B3",
         "EA:CB:11:EC:AA:A7:27:20:16:32:D4:AE:EA:CB:41:10:4A:3C:37:4F:B1:E9:F7:87:05:36:37:6B:D2:43:A4:62"
       ]
     }
